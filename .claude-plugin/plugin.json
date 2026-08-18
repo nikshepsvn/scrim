@@ -1,12 +1,12 @@
 {
-  "name": "spend",
-  "version": "0.2.0",
-  "description": "Local tool-output thinning and quota tracking for Claude Code. Fail-open. No payloads leave the machine unless you opt into an OpenRouter reducer.",
+  "name": "sift",
+  "version": "0.3.0",
+  "description": "Sift tool output before the model reads it. Local, fail-open, no payloads uploaded unless you opt into a reducer.",
   "author": {
     "name": "nikshepsvn"
   },
-  "homepage": "https://github.com/nikshepsvn/spend",
-  "repository": "https://github.com/nikshepsvn/spend",
+  "homepage": "https://github.com/nikshepsvn/sift",
+  "repository": "https://github.com/nikshepsvn/sift",
   "license": "MIT",
-  "keywords": ["claude-code", "hooks", "context", "tokens", "openrouter"]
+  "keywords": ["claude-code", "hooks", "context", "quota", "openrouter"]
 }

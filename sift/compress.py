@@ -33,7 +33,7 @@ def _compress_json(text: str) -> str | None:
     except json.JSONDecodeError:
         return _compress_ndjson(text)
     slim = _summarize(obj, 0)
-    return "[spend:json]\n" + json.dumps(slim, indent=2, default=str)
+    return "[sift:json]\n" + json.dumps(slim, indent=2, default=str)
 
 
 def _compress_ndjson(text: str) -> str | None:
@@ -49,7 +49,7 @@ def _compress_ndjson(text: str) -> str | None:
     if len(rows) < 8:
         return None
     slim = _summarize(rows, 0)
-    return "[spend:ndjson]\n" + json.dumps(slim, indent=2, default=str)
+    return "[sift:ndjson]\n" + json.dumps(slim, indent=2, default=str)
 
 
 def _summarize(obj: Any, depth: int) -> Any:
@@ -81,5 +81,5 @@ def _compress_html(text: str) -> str:
     no = re.sub(r"\n{3,}", "\n\n", no)
     no = re.sub(r"[ \t]{2,}", " ", no).strip()
     if len(no) > 12000:
-        no = no[:12000] + "\n[spend:html] truncated"
-    return "[spend:html]\n" + no
+        no = no[:12000] + "\n[sift:html] truncated"
+    return "[sift:html]\n" + no

@@ -1,7 +1,9 @@
 # Config reference
 
-File: `~/.spend/config.json`  
+File: `~/.sift/config.json`  
 Template: [`config.example.json`](../config.example.json)
+
+On first run, `~/.spend` is renamed to `~/.sift` if the new path does not exist.
 
 Unknown keys are ignored. Missing keys use defaults.
 
@@ -26,4 +28,4 @@ Unknown keys are ignored. Missing keys use defaults.
 | `reducer_timeout_sec` | `20` | HTTP timeout |
 | `reducer_api_key` | `""` | Optional if env is unset. Do not commit. |
 
-Env, in order: `OPENROUTER_API_KEY` or `ANTHROPIC_API_KEY`, then `SPEND_REDUCER_KEY`, then `reducer_api_key`.
+Env, in order: `OPENROUTER_API_KEY` or `ANTHROPIC_API_KEY`, then `SPEND_REDUCER_KEY` / `SIFT_REDUCER_KEY`, then `reducer_api_key`.

@@ -9,7 +9,7 @@ If your Codex build has hooks enabled, point PostToolUse at the same script:
       "hooks": [
         {
           "type": "command",
-          "command": "python3 /ABS/PATH/TO/spend/hooks/posttooluse.py",
+          "command": "python3 /ABS/PATH/TO/sift/hooks/posttooluse.py",
           "timeout": 8
         }
       ]

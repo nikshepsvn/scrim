@@ -5,8 +5,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from spendlib.compress import compress_text
-from spendlib.shrink import shrink_tool
+from sift.compress import compress_text
+from sift.shrink import shrink_tool
 
 
 def test_json_array():

@@ -1,74 +1,71 @@
-# spend
+# Sift
 
-Local **tool-output thinning** and **quota tracking** for [Claude Code](https://code.claude.com). Optional Codex hooks.
+**Sift tool output before the model reads it.**
 
-Hooks **fail open**. Source `Read`s and `Edit`s are never rewritten. Metrics never include prompts or stdout.
+Coding agents drown in passing tests, `ls -R`, log spam, and Chrome screenshots. Sift is a Claude Code plugin that classifies each tool result and keeps the evidence. What it drops stays off the next request. Hooks fail open. Source `Read`s and `Edit`s are never rewritten.
 
-This is not a billing product. On Claude Max it does not lower Stripe. It keeps chaff out of the context window and shows where the session went.
+It does not change your model. On Claude Max it does not lower Stripe. It keeps the window from filling with chaff, and it shows you what filled it.
 
 ## Install
 
-Private repo. Clone, then either:
+Private repo.
 
 ```bash
-git clone git@github.com:nikshepsvn/spend.git
-claude --plugin-dir /path/to/spend
+git clone git@github.com:nikshepsvn/sift.git
+claude --plugin-dir /absolute/path/to/sift
 ```
 
-or, from Claude Code (needs GitHub auth for a private marketplace):
+Or, with GitHub auth:
 
 ```text
-/plugin marketplace add nikshepsvn/spend
-/plugin install spend@spend
+/plugin marketplace add nikshepsvn/sift
+/plugin install sift@sift
 ```
 
-Restart Claude Code. Run a tool, then `/spend`.
+Restart Claude Code. Use a tool. Then `/sift`.
 
 ```bash
-python3 tests/test_shrink.py
-python3 tests/test_compress.py
-python3 tests/test_reducer.py
+make test
 ```
 
 ## What it does
 
-| Layer | Default | What |
+| Layer | Default | Role |
 |---|---|---|
-| Track | on | Every tool: name, kind, bytes in/out. `~/.spend/metrics.jsonl` |
-| Filter | on | Kind-aware deterministic thinning (below) |
+| Track | on | Tool name, kind, bytes in/out → `~/.sift/metrics.jsonl` |
+| Filter | on | Deterministic, kind-aware thinning |
 | Structural | on | Fat JSON → `{_n, head, tail}`; HTML → text |
-| Model reducer | **off** | Optional OpenRouter extract (Mercury-2 recommended) |
+| Reducer | **off** | Optional OpenRouter extract (`inception/mercury-2`) |
 
-### Kind policies
-
-| Kind | How |
+| Kind | Policy |
 |---|---|
-| `test_build_lint` | Keep FAIL / Error / traceback + tail |
-| `log` | Drain-lite templates + counts |
-| `search` (Grep / `rg`) | First N + tail; never drop FAIL/Error hits |
-| `file_list` (`ls`, Glob) | First N paths + omitted count |
-| `mcp` (Chrome / Playwright) | Drop **images**, then cap leftover text |
-| `web` | Cap at 16 KB |
-| `bash` (other fat) | Signal lines, else head+tail |
-| `read` / `edit` | **Passthrough** |
+| Tests / lint | FAIL, Error, traceback, tail |
+| Logs | Drain-lite templates + counts |
+| Grep / `rg` | Head + tail; never drop FAIL/Error hits |
+| `ls` / Glob | Head + omitted count |
+| Chrome / Playwright | Drop images, cap leftover text |
+| Web | 16 KB cap |
+| Other fat bash | Signal lines, else head+tail |
+| `Read` / `Edit` | Untouched |
 
-gzip/zstd do not help. The model has to read text.
+gzip does not help. The model has to read text.
 
 ## Config
 
-Copy [config.example.json](config.example.json) to `~/.spend/config.json`.
+Copy [`config.example.json`](config.example.json) to `~/.sift/config.json`.  
+If you still have `~/.spend` from the old name, Sift renames it on first run.
 
-Set `"shrink": false` to log only.
+`"shrink": false` logs only.
 
-### OpenRouter reducer (optional)
+### Optional reducer
 
-Recommended model after a live bake-off: **`inception/mercury-2`**. Cheap, ~3s, keeps failures, templates repeated INFO. Needs ≥4096 completion tokens on fat dumps. Fail-open if OpenRouter is slow.
+After a live bake-off, **`inception/mercury-2`** is the one that extracts. Use at least 4096 completion tokens. Fail-open if OpenRouter is slow.
 
 ```bash
 export OPENROUTER_API_KEY=sk-or-...
 ```
 
-If Claude is launched from the app and does not inherit your shell env, put the key in `~/.spend/config.json` as `reducer_api_key` (that file stays on this machine; do not commit it).
+If Claude is launched from the macOS app, it may not see that env var. You can set `reducer_api_key` in `~/.sift/config.json` instead. Do not commit that file.
 
 ```json
 {
@@ -79,30 +76,29 @@ If Claude is launched from the app and does not inherit your shell env, put the 
 }
 ```
 
-Do not use Morph apply models (`morph/morph-v3-*`) or Inkling as the reducer. Morph reprints the dump. Inkling spends the token budget on hidden reasoning and often returns empty `content`. See [docs/eval.md](docs/eval.md).
-
-Flash (`google/gemini-2.5-flash`) is the boring backup.
+Do not use Morph apply models or Inkling. Morph reprints the dump. Inkling spends the budget on hidden reasoning and often returns empty `content`. Notes: [docs/eval.md](docs/eval.md). Backup: `google/gemini-2.5-flash`.
 
 ## CLI
 
 ```bash
-python3 scripts/spend.py           # all hook metrics
-python3 scripts/spend.py --today
-python3 scripts/spend.py --backfill   # API-eq $ from ~/.claude/projects
-python3 scripts/spend.py --config
+python3 scripts/sift.py
+python3 scripts/sift.py --today
+python3 scripts/sift.py --backfill
+python3 scripts/sift.py --config
 ```
-
-`/spend` in Claude Code runs the same CLI.
 
 ## Codex
 
-See [codex/README.md](codex/README.md). Tracking works. Output replacement is first-class on Claude Code; treat Codex as tracking-first unless you verify `updatedToolOutput` on your CLI version.
+[codex/README.md](codex/README.md). Tracking works. Output replacement is first-class on Claude Code; treat Codex as tracking-first until you verify it on your CLI.
 
 ## Privacy
 
-- Default path: nothing leaves the machine except Claude’s normal provider call.
-- Metrics: counts and tool names only.
-- Reducer path: opted-in tool output is sent to OpenRouter (or Anthropic) to produce a shorter extract. Cached under `~/.spend/reducer-cache/`.
+Default path: nothing extra leaves the machine. Metrics are counts and tool names.  
+Opt-in reducer: truncated tool output goes to OpenRouter (or Anthropic). Cache: `~/.sift/reducer-cache/`.
+
+## Why “Sift”
+
+Not “spend.” This is not a billing product. Sift is the verb: keep the grain, drop the rest.
 
 ## Docs
 

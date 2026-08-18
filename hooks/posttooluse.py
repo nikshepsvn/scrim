@@ -12,9 +12,9 @@ PLUGIN_ROOT = os.environ.get("CLAUDE_PLUGIN_ROOT")
 if PLUGIN_ROOT and PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
-from spendlib.config import load_config
-from spendlib.metrics import append_metric
-from spendlib.shrink import shrink_tool
+from sift.config import load_config
+from sift.metrics import append_metric
+from sift.shrink import shrink_tool
 
 
 def main() -> int:

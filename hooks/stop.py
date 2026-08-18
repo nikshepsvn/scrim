@@ -11,8 +11,8 @@ PLUGIN_ROOT = os.environ.get("CLAUDE_PLUGIN_ROOT")
 if PLUGIN_ROOT and PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
-from spendlib.config import load_config
-from spendlib.metrics import iter_metrics
+from sift.config import load_config
+from sift.metrics import iter_metrics
 
 
 def main() -> int:
@@ -34,7 +34,7 @@ def main() -> int:
         # ~4 chars/token; warn on very fat sessions only
         if n and total_in >= 2_000_000:
             mb = total_in / 1e6
-            msg = f"[spend] this session's tool results were {mb:.1f} MB across {n} calls. Run /spend."
+            msg = f"[sift] this session's tool results were {mb:.1f} MB across {n} calls. Run /sift."
             print(
                 json.dumps(
                     {

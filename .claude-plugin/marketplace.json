@@ -1,17 +1,18 @@
 {
-  "name": "spend",
+  "name": "sift",
   "owner": {
     "name": "nikshepsvn",
     "url": "https://github.com/nikshepsvn"
   },
-  "description": "Local spend / quota plugin: thin tool output before the model reads it.",
+  "description": "Sift tool output before the model reads it.",
   "plugins": [
     {
-      "name": "spend",
+      "name": "sift",
       "source": "./",
-      "description": "Track tool bytes and thin tests, logs, greps, file lists, and Chrome screenshots. Optional OpenRouter reducer.",
+      "displayName": "Sift",
+      "description": "Thin tests, logs, greps, file lists, and Chrome screenshots before they hit the context window. Optional OpenRouter extract.",
       "license": "MIT",
-      "keywords": ["hooks", "context", "tokens", "quota"]
+      "keywords": ["hooks", "context", "quota", "tokens"]
     }
   ]
 }

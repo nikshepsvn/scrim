@@ -76,7 +76,7 @@ def reduce_text(text: str, cfg: dict) -> str | None:
 
     if not raw or len(raw) >= len(text) * 0.95:
         return None
-    return f"[spend:{tag}:{model}]\n" + raw
+    return f"[sift:{tag}:{model}]\n" + raw
 
 
 def _cached(snippet: str, backend: str, model: str) -> tuple[str, Path]:
@@ -101,6 +101,7 @@ def _write_cache(path: Path, text: str) -> None:
 def _openrouter(snippet: str, model: str, cfg: dict) -> str | None:
     key = (
         os.environ.get("OPENROUTER_API_KEY")
+        or os.environ.get("SIFT_REDUCER_KEY")
         or os.environ.get("SPEND_REDUCER_KEY")
         or (cfg.get("reducer_api_key") or "")
     )
@@ -122,8 +123,8 @@ def _openrouter(snippet: str, model: str, cfg: dict) -> str | None:
         headers={
             "content-type": "application/json",
             "authorization": f"Bearer {key}",
-            "http-referer": "https://github.com/spend",
-            "x-title": "spend",
+            "http-referer": "https://github.com/nikshepsvn/sift",
+            "x-title": "sift",
         },
         method="POST",
     )
@@ -146,6 +147,7 @@ def _openrouter(snippet: str, model: str, cfg: dict) -> str | None:
 def _anthropic(snippet: str, model: str, cfg: dict) -> str | None:
     key = (
         os.environ.get("ANTHROPIC_API_KEY")
+        or os.environ.get("SIFT_REDUCER_KEY")
         or os.environ.get("SPEND_REDUCER_KEY")
         or (cfg.get("reducer_api_key") or "")
     )

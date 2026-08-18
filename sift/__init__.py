@@ -1,4 +1,4 @@
-"""Local spend tracking + tool-output thinning. No network."""
+"""Sift tool output before the model reads it. Local, fail-open."""
 
 from .config import load_config, data_dir
 from .metrics import append_metric, summarize

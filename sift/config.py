@@ -26,9 +26,18 @@ DEFAULTS = {
 
 
 def data_dir() -> Path:
-    p = Path.home() / ".spend"
-    p.mkdir(parents=True, exist_ok=True)
-    return p
+    new = Path.home() / ".sift"
+    old = Path.home() / ".spend"
+    if new.exists():
+        return new
+    if old.exists():
+        try:
+            old.rename(new)
+            return new
+        except OSError:
+            return old
+    new.mkdir(parents=True, exist_ok=True)
+    return new
 
 
 def load_config() -> dict:

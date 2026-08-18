@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI: spend  |  spend --today  |  spend --backfill"""
+"""CLI: sift | sift --today | sift --backfill"""
 
 from __future__ import annotations
 
@@ -13,9 +13,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from spendlib.config import data_dir, load_config
-from spendlib.metrics import summarize
-from spendlib.prices import cost_usd
+from sift.config import data_dir, load_config
+from sift.metrics import summarize
+from sift.prices import cost_usd
 
 
 def print_summary(s: dict, title: str) -> None:
@@ -84,7 +84,7 @@ def backfill_transcripts() -> None:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Local Claude Code spend tracker")
+    p = argparse.ArgumentParser(description="Sift: local tool-output thinning for Claude Code")
     p.add_argument("--today", action="store_true")
     p.add_argument("--backfill", action="store_true", help="sum API-eq $ from ~/.claude/projects")
     p.add_argument("--config", action="store_true")
