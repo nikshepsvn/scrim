@@ -18,7 +18,6 @@
   <img src="https://img.shields.io/badge/v0.7.0-16120e?style=flat-square&label=scrim&labelColor=0c0b0a" alt="v0.7.0">
   <img src="https://img.shields.io/badge/hooks-fail--open-f4efe6?style=flat-square&labelColor=0c0b0a" alt="Fail-open">
   <img src="https://img.shields.io/badge/license-MIT-16120e?style=flat-square&labelColor=0c0b0a" alt="MIT">
-  <img src="https://img.shields.io/github/actions/workflow/status/nikshepsvn/scrim/test.yml?style=flat-square&label=tests&labelColor=0c0b0a" alt="tests">
 </p>
 
 <p align="center">
@@ -45,16 +44,16 @@ Scrim hangs in front of the tool result.
 └────────────────────────────┘                 └──────────────────────┘
 ```
 
-`Read` and `Edit` never go through it. Hooks **fail open**. It does not switch your model, and it does not change a Max subscription's Stripe charge.
+`Read` and `Edit` never go through it. Hooks **fail open** — on any error the agent sees the original result. It does not switch your model.
 
 ## Four jobs
 
-| | | |
+| Job | Where | What |
 |---|---|---|
-| **See** | Transcripts + hooks | Cache-read share, list-price $, MB by tool |
+| **See** | Transcripts + hooks | Cache-read share, list-price $, MB by tool and kind |
 | **Prevent** | `PreToolUse` | `ls -R` / `find` / `rg` capped *before* they run |
 | **Thin** | `PostToolUse` | Tests, logs, grep, listings, Chrome images, fat JSON |
-| **Delegate** | Subagents | `/scrim` and stash retrieve run on **Haiku**, not Opus |
+| **Delegate** | Subagents | `/scrim` and stash retrieve run on **Haiku**, not your session model |
 
 Swarm watch counts open subagents and warns after eight. Claude Code will not let a hook cancel a spawn.
 
@@ -75,7 +74,7 @@ Private marketplace (needs GitHub auth):
 Restart Claude Code. Run a tool. Then `/scrim`.
 
 ```bash
-make test                        # 71 hermetic tests, stdlib only
+make test                        # hermetic, stdlib only
 python3 scripts/scrim.py doctor  # if nothing shows up
 ```
 
@@ -84,12 +83,13 @@ python3 scripts/scrim.py doctor  # if nothing shows up
 ```
 Scrim
 Usage  (list prices, not Stripe)
-  $1,204 API-eq   turns 412   cache-read 96%   cache-write 3.1M   out 80k
+  $1,204 API-eq   turns 412   cache-read 41,236,801 (96%)   cache-write 3,102,455   out 81,340
     claude-opus-5                    $980   300 turns
     claude-fable-5                   $210   112 turns
 Tools  (this plugin)
-  142 calls   4.20 MB in → 0.31 MB out   3.89 MB thinned
-    mcp__claude-in-chrome__browser_batch   n=2     3.80 MB
+  142 calls   4.20 MB in → 0.31 MB out   3.89 MB thinned  (61 calls)
+    mcp__claude-in-chrome__browser_batch     n=2       3.80 MB
+  stashed originals  12  (scrim get <id>)
 ```
 
 ```bash
@@ -100,6 +100,7 @@ python3 scripts/scrim.py stashes           # what's retrievable
 python3 scripts/scrim.py kinds             # where the MB went, by kind
 python3 scripts/scrim.py doctor            # is the chain healthy
 python3 scripts/scrim.py prune             # trim old metrics + stash
+python3 scripts/scrim.py --config          # effective config + warnings
 ```
 
 Those dollars are **list prices** (Fable at Fable rates, Opus at Opus rates). Max/Ultra is a subscription — you are looking at quota shape, not a card charge.
@@ -129,7 +130,7 @@ Old `~/.sift` / `~/.spend` directories are renamed on first run.
 
 ## Optional extract
 
-Filters are the default. For logs that still need a brain, turn on OpenRouter. **`inception/mercury-2`** is the model that extracted in our bake-off. Use ≥4096 completion tokens.
+Filters are the default. For logs that still need a brain, turn on OpenRouter. **`inception/mercury-2`** was the only model in our bake-off that behaved like a reducer at hook latency. Use ≥4096 completion tokens.
 
 ```bash
 export OPENROUTER_API_KEY=sk-or-...
@@ -161,7 +162,7 @@ flowchart LR
   G --> H["/scrim → Haiku analyst"]
 ```
 
-Any hook error prints `{}` and exits 0. The agent sees the original result.
+Any hook error prints `{}` and exits 0 — even a missing hook file, an import error, or a Python 2 `python`. The agent sees the original result.
 
 ## Privacy
 
