@@ -1,12 +1,12 @@
 {
   "name": "scrim",
   "version": "0.7.0",
-  "description": "A scrim between the tool and the model. Cost observability and tool-output optimization. Local, fail-open.",
+  "description": "A scrim between the tool and the model. Cost observability and tool-output thinning for Claude Code and Codex. Local, fail-open.",
   "author": {
     "name": "nikshepsvn"
   },
   "homepage": "https://github.com/nikshepsvn/scrim",
   "repository": "https://github.com/nikshepsvn/scrim",
   "license": "MIT",
-  "keywords": ["claude-code", "hooks", "context", "quota", "openrouter"]
+  "keywords": ["claude-code", "codex", "hooks", "context", "quota", "openrouter"]
 }
