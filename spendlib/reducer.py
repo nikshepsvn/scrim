@@ -27,6 +27,23 @@ DEFAULT_OPENROUTER_MODEL = "google/gemini-2.5-flash"
 DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
 
 
+def _message_text(msg: dict) -> str:
+    content = msg.get("content")
+    if isinstance(content, str) and content.strip():
+        return content.strip()
+    if isinstance(content, list):
+        parts = []
+        for b in content:
+            if isinstance(b, str):
+                parts.append(b)
+            elif isinstance(b, dict) and isinstance(b.get("text"), str):
+                parts.append(b["text"])
+        out = "\n".join(parts).strip()
+        if out:
+            return out
+    return ""
+
+
 def cache_path(digest: str) -> Path:
     d = data_dir() / "reducer-cache"
     d.mkdir(parents=True, exist_ok=True)
@@ -95,7 +112,7 @@ def _openrouter(snippet: str, model: str, cfg: dict) -> str | None:
         return hit
     body = {
         "model": model,
-        "max_tokens": 2048,
+        "max_tokens": int(cfg.get("reducer_max_tokens") or 4096),
         "temperature": 0,
         "messages": [{"role": "user", "content": PROMPT + "\n\n---\n" + snippet}],
     }
@@ -111,7 +128,7 @@ def _openrouter(snippet: str, model: str, cfg: dict) -> str | None:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=float(cfg.get("reducer_timeout_sec") or 8)) as resp:
+        with urllib.request.urlopen(req, timeout=float(cfg.get("reducer_timeout_sec") or 20)) as resp:
             payload = json.loads(resp.read().decode())
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError):
         return None
@@ -119,7 +136,7 @@ def _openrouter(snippet: str, model: str, cfg: dict) -> str | None:
     if not choices:
         return None
     msg = (choices[0] or {}).get("message") or {}
-    out = (msg.get("content") or "").strip()
+    out = _message_text(msg)
     if not out:
         return None
     _write_cache(cached, out)
@@ -140,7 +157,7 @@ def _anthropic(snippet: str, model: str, cfg: dict) -> str | None:
         return hit
     body = {
         "model": model,
-        "max_tokens": 2048,
+        "max_tokens": int(cfg.get("reducer_max_tokens") or 4096),
         "messages": [{"role": "user", "content": PROMPT + "\n\n---\n" + snippet}],
     }
     req = urllib.request.Request(
@@ -154,7 +171,7 @@ def _anthropic(snippet: str, model: str, cfg: dict) -> str | None:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=float(cfg.get("reducer_timeout_sec") or 8)) as resp:
+        with urllib.request.urlopen(req, timeout=float(cfg.get("reducer_timeout_sec") or 20)) as resp:
             payload = json.loads(resp.read().decode())
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError):
         return None

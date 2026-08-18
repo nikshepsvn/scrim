@@ -88,7 +88,8 @@ export OPENROUTER_API_KEY=sk-or-...
   "structural": true,
   "reducer": "openrouter",
   "reducer_model": "google/gemini-2.5-flash",
-  "reducer_timeout_sec": 8
+  "reducer_timeout_sec": 20,
+  "reducer_max_tokens": 4096
 }
 ```
 

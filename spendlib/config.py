@@ -19,7 +19,8 @@ DEFAULTS = {
     "reducer_model": "google/gemini-2.5-flash",
     "reducer_min_bytes": 8000,
     "reducer_max_bytes": 120000,
-    "reducer_timeout_sec": 8,
+    "reducer_timeout_sec": 20,
+    "reducer_max_tokens": 4096,
     "reducer_api_key": "",
 }
 
