@@ -1,0 +1,8 @@
+{
+  "name": "spend",
+  "version": "0.1.0",
+  "description": "Local spend tracking and tool-output thinning for Claude Code. No cloud. No payloads leave the machine.",
+  "author": {
+    "name": "spend"
+  }
+}
