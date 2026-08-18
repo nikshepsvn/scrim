@@ -11,7 +11,20 @@ This is not Codag. It does not change your model. On Claude Max it will not lowe
 | | |
 |---|---|
 | **Track** | Every tool call: name, bytes in/out, whether it was thinned. `~/.spend/metrics.jsonl` |
-| **Thin** | Drop Chrome/Playwright **image** blocks. Keep FAIL lines from fat pytest/jest. Cap huge bash. |
+| **Optimize output** | By kind, before the model reads it. Fail-open. Source `Read`s are never touched. |
+
+### What gets thinned
+
+| Kind | How |
+|---|---|
+| `test_build_lint` | Keep FAIL / Error / traceback + tail |
+| `log` | Template-group repetitive lines (Drain-lite) |
+| `search` (Grep / `rg`) | First N hits + tail + omitted count |
+| `file_list` (`ls`, Glob) | First N paths + omitted count |
+| `mcp` (Chrome / Playwright) | Drop **images**, then cap leftover text |
+| `web` | Cap at 16 KB |
+| `bash` (other fat) | Signal lines, else head+tail |
+| `read` / `edit` | **Passthrough** |
 | **Report** | `/spend` or `python3 scripts/spend.py` |
 | **Backfill** | `python3 scripts/spend.py --backfill` reads `~/.claude/projects` usage fields (API-equivalent $) |
 
@@ -44,8 +57,12 @@ python3 scripts/spend.py --config
   "shrink": true,
   "strip_images": true,
   "thin_tests": true,
+  "thin_reads": false,
   "bash_cap_bytes": 48000,
-  "warn_session_usd": 40
+  "search_keep_lines": 40,
+  "list_keep_lines": 80,
+  "web_cap_bytes": 16000,
+  "mcp_text_cap_bytes": 12000
 }
 ```
 

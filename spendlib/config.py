@@ -7,7 +7,12 @@ DEFAULTS = {
     "shrink": True,
     "strip_images": True,
     "thin_tests": True,
+    "thin_reads": False,
     "bash_cap_bytes": 48000,
+    "search_keep_lines": 40,
+    "list_keep_lines": 80,
+    "web_cap_bytes": 16000,
+    "mcp_text_cap_bytes": 12000,
     "warn_session_usd": 40.0,
 }
 

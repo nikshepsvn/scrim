@@ -41,6 +41,7 @@ def main() -> int:
                 "bytes_in": decision["bytes_in"],
                 "bytes_out": decision["bytes_out"],
                 "shrunk": decision["shrunk"],
+                "kind": decision.get("kind") or "",
                 "note": decision.get("note") or "",
             }
         )

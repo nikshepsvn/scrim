@@ -1,27 +1,21 @@
-"""Fail-open thinning. Returns (new_response_or_None, bytes_in, bytes_out, note)."""
+"""Fail-open tool-output optimization. Never throw; caller fail-opens."""
 
 from __future__ import annotations
 
 import json
-import re
 from typing import Any
 
-TEST_RE = re.compile(
-    r"(npm test|pnpm test|yarn test|pytest|vitest|jest|cargo test|go test|npx tsc|eslint|\blint\b)",
-    re.I,
-)
-FAIL_RE = re.compile(
-    r"(FAIL|Error|AssertionError|FAILED|error TS|✖|×|not ok |panic:)",
-    re.I,
-)
+from .classify import classify, command_of
+from .textops import drain, head_tail, keep_signal_lines
+
+# kinds we refuse to rewrite (source / diffs / small structured)
+PASSTHROUGH = {"read", "edit", "other"}
 
 
 def _nbytes(obj: Any) -> int:
     if obj is None:
         return 0
-    if isinstance(obj, str):
-        return len(obj)
-    if isinstance(obj, (bytes, bytearray)):
+    if isinstance(obj, (str, bytes, bytearray)):
         return len(obj)
     try:
         return len(json.dumps(obj, default=str))
@@ -29,25 +23,37 @@ def _nbytes(obj: Any) -> int:
         return len(str(obj))
 
 
-def _stdout_of(resp: Any) -> str | None:
+def _as_text(resp: Any) -> str | None:
     if isinstance(resp, str):
         return resp
     if isinstance(resp, dict):
-        for k in ("stdout", "output", "content"):
-            v = resp.get(k)
-            if isinstance(v, str):
-                return v
+        for k in ("stdout", "output"):
+            if isinstance(resp.get(k), str):
+                return resp[k]
+        c = resp.get("content")
+        if isinstance(c, str):
+            return c
+        if isinstance(c, list):
+            return _as_text(c)
+    if isinstance(resp, list):
+        parts = []
+        for b in resp:
+            if isinstance(b, str):
+                parts.append(b)
+            elif isinstance(b, dict) and isinstance(b.get("text"), str):
+                parts.append(b["text"])
+        if parts:
+            return "\n".join(parts)
     return None
 
 
 def _strip_images(resp: Any) -> tuple[Any, int]:
-    """Drop image blocks from a content list. Returns (new, n_dropped)."""
     if isinstance(resp, list):
-        kept = []
-        dropped = 0
+        kept, dropped = [], 0
         for b in resp:
             if isinstance(b, dict) and (
-                b.get("type") == "image" or "source" in b and b.get("type") != "text"
+                b.get("type") == "image"
+                or ("source" in b and b.get("type") != "text")
             ):
                 dropped += 1
                 continue
@@ -62,111 +68,143 @@ def _strip_images(resp: Any) -> tuple[Any, int]:
     return resp, 0
 
 
-def _thin_test_stdout(text: str, cap: int) -> str | None:
-    if len(text) < 2000:
+def _wrap_text(resp: Any, text: str, *, mcp: bool) -> dict:
+    """Put thinned text back in the original shape."""
+    if mcp:
+        if isinstance(resp, list):
+            return {"updated_mcp_output": [{"type": "text", "text": text}]}
+        if isinstance(resp, dict):
+            out = dict(resp)
+            if isinstance(out.get("content"), list):
+                out["content"] = [{"type": "text", "text": text}]
+            elif "content" in out:
+                out["content"] = text
+            else:
+                out["content"] = text
+            return {"updated_mcp_output": out}
+        return {"updated_mcp_output": [{"type": "text", "text": text}]}
+
+    if isinstance(resp, dict) and "stdout" in resp:
+        updated = dict(resp)
+        updated["stdout"] = text
+        return {"updated_tool_output": updated}
+    if isinstance(resp, dict) and isinstance(resp.get("content"), str):
+        updated = dict(resp)
+        updated["content"] = text
+        return {"updated_tool_output": updated}
+    # Claude often delivers Bash/Grep as a raw string
+    return {
+        "updated_tool_output": {
+            "stdout": text,
+            "stderr": "",
+            "interrupted": False,
+            "isImage": False,
+        }
+    }
+
+
+def _annotate(body: str, n_orig: int, kind: str) -> str:
+    return body + f"\n\n[spend] {kind}: {n_orig} → {len(body)} bytes. Re-run with a tighter query if you need the rest."
+
+
+def _optimize_text(kind: str, text: str, cfg: dict) -> str | None:
+    search_n = int(cfg.get("search_keep_lines") or 40)
+    list_n = int(cfg.get("list_keep_lines") or 80)
+    web_cap = int(cfg.get("web_cap_bytes") or 16000)
+    mcp_cap = int(cfg.get("mcp_text_cap_bytes") or 12000)
+    bash_cap = int(cfg.get("bash_cap_bytes") or 48000)
+
+    if kind == "test_build_lint":
+        return keep_signal_lines(text)
+    if kind == "log":
+        return drain(text) or keep_signal_lines(text, extra_keep=30)
+    if kind == "search":
+        return head_tail(text, search_n, 8, "matches")
+    if kind == "file_list":
+        return head_tail(text, list_n, 10, "paths")
+    if kind == "web":
+        if len(text) > web_cap:
+            return text[:web_cap] + f"\n[spend] web capped at {web_cap} bytes"
         return None
-    lines = text.splitlines()
-    keep = [ln for ln in lines if FAIL_RE.search(ln)]
-    # always keep last 15 lines (summary / exit)
-    tail = lines[-15:]
-    seen = set()
-    out_lines = []
-    for ln in keep + tail:
-        if ln in seen:
-            continue
-        seen.add(ln)
-        out_lines.append(ln)
-    thinned = "\n".join(out_lines)
-    note = f"\n\n[spend] kept {len(out_lines)} of {len(lines)} lines ({len(text)}→{len(thinned)} bytes)"
-    body = thinned + note
-    if cap and len(body) > cap:
-        body = body[:cap] + "\n[spend] capped"
-    if len(body) >= len(text):
+    if kind == "mcp":
+        if len(text) > mcp_cap:
+            return text[:mcp_cap] + f"\n[spend] mcp text capped at {mcp_cap} bytes"
         return None
-    return body
+    if kind == "bash":
+        sig = keep_signal_lines(text)
+        if sig:
+            return sig
+        if bash_cap and len(text) > bash_cap:
+            return head_tail(text, 80, 40, "lines") or text[:bash_cap]
+        return None
+    return None
 
 
 def shrink_tool(tool_name: str, tool_input: Any, tool_response: Any, cfg: dict) -> dict:
-    """Decide whether to replace the tool result.
-
-    Returns {
-      bytes_in, bytes_out, shrunk: bool, note: str,
-      updated_tool_output?: dict,  # Bash-shaped
-      updated_mcp_output?: Any,
-    }
-    """
     bytes_in = _nbytes(tool_response)
+    kind = classify(tool_name, tool_input)
     result = {
         "bytes_in": bytes_in,
         "bytes_out": bytes_in,
         "shrunk": False,
         "note": "",
+        "kind": kind,
     }
     if not cfg.get("shrink"):
         return result
+    if kind in PASSTHROUGH and not cfg.get("thin_reads"):
+        return result
+    # already spilled by the harness
+    if isinstance(tool_response, str) and tool_response.startswith("<persisted-output>"):
+        return result
 
-    name = tool_name or ""
-    cmd = ""
-    if isinstance(tool_input, dict):
-        cmd = str(tool_input.get("command") or tool_input.get("cmd") or "")
-    elif isinstance(tool_input, str):
-        cmd = tool_input
+    working = tool_response
+    notes: list[str] = []
 
-    # MCP / chrome / playwright: drop images
-    is_mcp = name.startswith("mcp__") or "chrome" in name.lower() or "playwright" in name.lower()
-    if cfg.get("strip_images") and is_mcp:
-        new_resp, dropped = _strip_images(tool_response)
+    if kind == "mcp" and cfg.get("strip_images"):
+        working, dropped = _strip_images(working)
         if dropped:
-            note = f"[spend] dropped {dropped} image block(s)"
-            if isinstance(new_resp, list):
-                new_resp = list(new_resp) + [{"type": "text", "text": note}]
-            result["updated_mcp_output"] = new_resp
-            result["bytes_out"] = _nbytes(new_resp)
-            result["shrunk"] = True
-            result["note"] = note
-            return result
+            notes.append(f"dropped {dropped} image(s)")
 
-    # Bash / test output
-    if name in {"Bash", "bash", "Shell", "Zsh"} and cfg.get("thin_tests"):
-        stdout = _stdout_of(tool_response)
-        if stdout and TEST_RE.search(cmd or stdout[:2000]):
-            thinned = _thin_test_stdout(stdout, int(cfg.get("bash_cap_bytes") or 0))
-            if thinned:
-                if isinstance(tool_response, dict):
-                    updated = dict(tool_response)
-                    if "stdout" in updated:
-                        updated["stdout"] = thinned
-                    else:
-                        updated["stdout"] = thinned
-                    result["updated_tool_output"] = updated
-                else:
-                    result["updated_tool_output"] = {
-                        "stdout": thinned,
-                        "stderr": "",
-                        "interrupted": False,
-                        "isImage": False,
-                    }
-                result["bytes_out"] = len(thinned)
-                result["shrunk"] = True
-                result["note"] = "thinned test output"
-                return result
-
-        cap = int(cfg.get("bash_cap_bytes") or 0)
-        stdout = _stdout_of(tool_response)
-        if stdout and cap and len(stdout) > cap:
-            cut = stdout[:cap] + f"\n[spend] capped at {cap} bytes (was {len(stdout)})"
-            if isinstance(tool_response, dict) and "stdout" in tool_response:
-                updated = dict(tool_response)
-                updated["stdout"] = cut
-                result["updated_tool_output"] = updated
-            else:
-                result["updated_tool_output"] = {
-                    "stdout": cut,
-                    "stderr": "",
-                    "interrupted": False,
-                    "isImage": False,
-                }
-            result["bytes_out"] = len(cut)
+    text = _as_text(working)
+    if text is None:
+        if notes and working is not tool_response:
+            result.update(_wrap_from_resp(kind, working))
+            result["bytes_out"] = _nbytes(working)
             result["shrunk"] = True
-            result["note"] = "capped bash"
+            result["note"] = "; ".join(notes)
+        return result
+
+    thinned = None
+    if kind == "test_build_lint" and not cfg.get("thin_tests", True):
+        thinned = None
+    else:
+        thinned = _optimize_text(kind, text, cfg)
+
+    if thinned:
+        thinned = _annotate(thinned, len(text), kind)
+        notes.append(kind)
+        wrapped = _wrap_text(tool_response, thinned, mcp=(kind == "mcp"))
+        result.update(wrapped)
+        result["bytes_out"] = len(thinned)
+        result["shrunk"] = True
+        result["note"] = "; ".join(notes)
+        return result
+
+    if notes and working is not tool_response:
+        # images stripped but no further text cut
+        result["updated_mcp_output"] = working if kind == "mcp" else None
+        if kind == "mcp":
+            if isinstance(working, list):
+                working = list(working) + [{"type": "text", "text": "[spend] " + notes[0]}]
+                result["updated_mcp_output"] = working
+        result["bytes_out"] = _nbytes(working)
+        result["shrunk"] = True
+        result["note"] = "; ".join(notes)
     return result
+
+
+def _wrap_from_resp(kind: str, working: Any) -> dict:
+    if kind == "mcp":
+        return {"updated_mcp_output": working}
+    return {}

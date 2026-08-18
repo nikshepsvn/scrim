@@ -3,6 +3,7 @@
 from .config import load_config, data_dir
 from .metrics import append_metric, summarize
 from .prices import cost_usd, price_for
+from .classify import classify
 from .shrink import shrink_tool
 
 __all__ = [
@@ -12,5 +13,6 @@ __all__ = [
     "summarize",
     "cost_usd",
     "price_for",
+    "classify",
     "shrink_tool",
 ]
