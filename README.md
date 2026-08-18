@@ -2,70 +2,102 @@
 
 **Sift tool output before the model reads it.**
 
-Coding agents drown in passing tests, `ls -R`, log spam, and Chrome screenshots. Sift is a Claude Code plugin that classifies each tool result and keeps the evidence. What it drops stays off the next request. Hooks fail open. Source `Read`s and `Edit`s are never rewritten.
+Claude Code will feed the model 4,000 lines of passing tests and a folder of screenshots. Sift sits on `PostToolUse`, classifies the result, and hands the model the evidence. Hooks fail open. `Read` and `Edit` are never rewritten.
 
-It does not change your model. On Claude Max it does not lower Stripe. It keeps the window from filling with chaff, and it shows you what filled it.
+It does not switch models and it does not change your Anthropic bill. It keeps chaff out of the window.
+
+## Before / after
+
+`pytest -q` — 402 lines, one failure:
+
+```
+PASS test_a
+PASS test_a
+… 398 more …
+FAIL test_b
+AssertionError: boom
+```
+
+What the model gets:
+
+```
+FAIL test_b
+AssertionError: boom
+
+[sift] test_build_lint: 2827 → 34 bytes.
+```
+
+Chrome `browser_batch` with six screenshots: images dropped, text kept. On this machine that was 104 MB → 3 MB of MCP payload.
 
 ## Install
 
-Private repo.
-
 ```bash
 git clone git@github.com:nikshepsvn/sift.git
-claude --plugin-dir /absolute/path/to/sift
+claude --plugin-dir "$(pwd)/sift"
 ```
 
-Or, with GitHub auth:
+Needs GitHub auth (private repo):
 
 ```text
 /plugin marketplace add nikshepsvn/sift
 /plugin install sift@sift
 ```
 
-Restart Claude Code. Use a tool. Then `/sift`.
+Restart Claude Code. Run any tool. Then `/sift`.
 
 ```bash
 make test
 ```
 
-## What it does
+## `/sift`
 
-| Layer | Default | Role |
-|---|---|---|
-| Track | on | Tool name, kind, bytes in/out → `~/.sift/metrics.jsonl` |
-| Filter | on | Deterministic, kind-aware thinning |
-| Structural | on | Fat JSON → `{_n, head, tail}`; HTML → text |
-| Reducer | **off** | Optional OpenRouter extract (`inception/mercury-2`) |
+```
+today 2026-08-18
+  tool calls     12
+  bytes in       4.20 MB
+  bytes out      0.31 MB
+  thinned        3 calls, 3.89 MB dropped
+  top tools
+    mcp__claude-in-chrome__browser_batch   n=2     3.80 MB
+    Bash                                   n=8     0.28 MB
+data: ~/.sift
+```
+
+CLI is the same thing:
+
+```bash
+python3 scripts/sift.py --today
+python3 scripts/sift.py --backfill   # list-price $ from ~/.claude/projects
+```
+
+`--backfill` is shadow cost (Opus/Sonnet list prices). Max/Ultra subscribers do not pay that cash.
+
+## What gets thinned
 
 | Kind | Policy |
 |---|---|
-| Tests / lint | FAIL, Error, traceback, tail |
+| Tests / lint | FAIL, Error, traceback + tail |
 | Logs | Drain-lite templates + counts |
-| Grep / `rg` | Head + tail; never drop FAIL/Error hits |
+| Grep / `rg` | Head + tail; FAIL/Error hits always kept |
 | `ls` / Glob | Head + omitted count |
 | Chrome / Playwright | Drop images, cap leftover text |
 | Web | 16 KB cap |
 | Other fat bash | Signal lines, else head+tail |
 | `Read` / `Edit` | Untouched |
 
-gzip does not help. The model has to read text.
+gzip does not reduce tokens. The model has to read text.
 
-## Config
+Copy [`config.example.json`](config.example.json) to `~/.sift/config.json`. `"shrink": false` logs only. Full key list: [docs/config.md](docs/config.md).
 
-Copy [`config.example.json`](config.example.json) to `~/.sift/config.json`.  
-If you still have `~/.spend` from the old name, Sift renames it on first run.
+If `~/.spend` still exists from the old name, the first run renames it.
 
-`"shrink": false` logs only.
+## Optional: OpenRouter extract
 
-### Optional reducer
-
-After a live bake-off, **`inception/mercury-2`** is the one that extracts. Use at least 4096 completion tokens. Fail-open if OpenRouter is slow.
+Deterministic filters are the default and enough for screenshots and fat bash. For logs that need a real extract, turn on a reducer. **`inception/mercury-2`** is the one that worked in our bake-off (keep ≥4096 completion tokens).
 
 ```bash
 export OPENROUTER_API_KEY=sk-or-...
 ```
-
-If Claude is launched from the macOS app, it may not see that env var. You can set `reducer_api_key` in `~/.sift/config.json` instead. Do not commit that file.
 
 ```json
 {
@@ -76,35 +108,25 @@ If Claude is launched from the macOS app, it may not see that env var. You can s
 }
 ```
 
-Do not use Morph apply models or Inkling. Morph reprints the dump. Inkling spends the budget on hidden reasoning and often returns empty `content`. Notes: [docs/eval.md](docs/eval.md). Backup: `google/gemini-2.5-flash`.
+The macOS Claude app often does not inherit shell env. You can set `reducer_api_key` in `~/.sift/config.json` instead. Do not commit that file.
 
-## CLI
-
-```bash
-python3 scripts/sift.py
-python3 scripts/sift.py --today
-python3 scripts/sift.py --backfill
-python3 scripts/sift.py --config
-```
-
-## Codex
-
-[codex/README.md](codex/README.md). Tracking works. Output replacement is first-class on Claude Code; treat Codex as tracking-first until you verify it on your CLI.
+Skip Morph (`morph/morph-v3-*`) and Inkling. Morph reprints the dump. Inkling burns the budget on hidden reasoning. Notes: [docs/eval.md](docs/eval.md). Backup: `google/gemini-2.5-flash`.
 
 ## Privacy
 
-Default path: nothing extra leaves the machine. Metrics are counts and tool names.  
-Opt-in reducer: truncated tool output goes to OpenRouter (or Anthropic). Cache: `~/.sift/reducer-cache/`.
+Default: nothing extra leaves the machine. Metrics are counts and tool names.
 
-## Why “Sift”
+Reducer on: truncated tool output goes to OpenRouter (or Anthropic). Cache: `~/.sift/reducer-cache/`.
 
-Not “spend.” This is not a billing product. Sift is the verb: keep the grain, drop the rest.
+## Codex
+
+Tracking works if you point Codex `PostToolUse` at `hooks/posttooluse.py`. Replacing output is first-class in Claude Code; confirm it on your Codex build before relying on it. [codex/README.md](codex/README.md).
 
 ## Docs
 
-- [docs/how-it-works.md](docs/how-it-works.md)
-- [docs/config.md](docs/config.md)
-- [docs/eval.md](docs/eval.md)
+- [docs/how-it-works.md](docs/how-it-works.md) — hook pipeline
+- [docs/config.md](docs/config.md) — every key
+- [docs/eval.md](docs/eval.md) — measured save rates and model bake-off
 - [SECURITY.md](SECURITY.md)
 
 ## License

@@ -11,7 +11,6 @@ PLUGIN_ROOT = os.environ.get("CLAUDE_PLUGIN_ROOT")
 if PLUGIN_ROOT and PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
-from sift.config import load_config
 from sift.metrics import iter_metrics
 
 
@@ -21,7 +20,6 @@ def main() -> int:
     except Exception:
         return 0
     try:
-        cfg = load_config()
         sid = data.get("session_id")
         if not sid:
             return 0
