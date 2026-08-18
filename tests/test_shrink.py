@@ -133,6 +133,49 @@ def test_web_capped():
     assert r["bytes_out"] < r["bytes_in"]
 
 
+def test_codex_argv_command_classified():
+    # Codex sends shell commands as argv; the script rides after -lc
+    assert classify("shell", {"command": ["bash", "-lc", "pytest -q"]}) == "test_build_lint"
+    assert classify("shell", {"command": ["bash", "-lc", "ls -R src"]}) == "file_list"
+    assert classify("exec", {"input": "await tools.exec_command({\"cmd\":\"pytest -q\"})"}) == "test_build_lint"
+
+
+def test_codex_output_key_preserved():
+    lines = ["PASS test_a"] * 200 + ["FAIL test_b", "AssertionError: boom"]
+    r = shrink_tool("shell", {"command": ["bash", "-lc", "pytest -q"]},
+                    {"output": "\n".join(lines), "metadata": {"exit_code": 1}}, CFG)
+    assert r["shrunk"] is True
+    out = r["updated_tool_output"]
+    assert "FAIL test_b" in out["output"]
+    assert out["metadata"] == {"exit_code": 1}
+
+
+def test_scrim_get_passthrough():
+    # retrieving a stash must not re-thin (and re-stash) the blob
+    big = "\n".join(["Error: line %d" % i for i in range(500)])
+    for cmd in ("python3 scripts/scrim.py get abc123", "scrim get abc123 10-40"):
+        r = shrink_tool("Bash", {"command": cmd}, {"stdout": big, "stderr": ""}, CFG)
+        assert r["kind"] == "other"
+        assert r["shrunk"] is False
+
+
+def test_traceback_frames_kept():
+    noise = ["PASS test_%d" % i for i in range(200)]
+    tb = [
+        "Traceback (most recent call last):",
+        '  File "/app/x.py", line 10, in run',
+        "    do_thing()",
+        '  File "/app/y.py", line 3, in do_thing',
+        "    assert cfg[key]",
+        "KeyError: 'shrink'",
+    ]
+    text = "\n".join(tb + noise)  # frames far from the kept tail
+    r = shrink_tool("Bash", {"command": "pytest -q"}, {"stdout": text, "stderr": ""}, CFG)
+    body = r["updated_tool_output"]["stdout"]
+    assert '  File "/app/y.py", line 3, in do_thing' in body
+    assert "    assert cfg[key]" in body
+
+
 def test_never_larger_than_input():
     # a marginal head/tail cut plus annotations would exceed the original
     text = "\n".join(f"line number {i:04d} padding" for i in range(16))

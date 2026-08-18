@@ -12,13 +12,32 @@ SLOT_RE = re.compile(
     r"\b\d+\b|[0-9a-f]{8}-[0-9a-f-]{4,}|0x[0-9a-f]+|\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}",
     re.I,
 )
+# stack frames under a signal line: Python "  File ...", JS "    at ...",
+# and generically indented assertion/code context — without these a
+# Traceback keeps only its header and exception line
+CONT_RE = re.compile(r"^\s+at |^\s+File \"|^\s{2,}\S")
 
 
-def keep_signal_lines(text: str, extra_keep: int = 15, max_signal: int = 400) -> str | None:
+def keep_signal_lines(
+    text: str, extra_keep: int = 15, max_signal: int = 400, frames_after: int = 25
+) -> str | None:
     if len(text) < 2000:
         return None
     lines = text.splitlines()
-    keep = [ln for ln in lines if FAIL_RE.search(ln) or LEVEL_RE.search(ln)]
+    kept_idx: set[int] = set()
+    keep: list[str] = []
+    for i, ln in enumerate(lines):
+        if not (FAIL_RE.search(ln) or LEVEL_RE.search(ln)):
+            continue
+        if i not in kept_idx:
+            kept_idx.add(i)
+            keep.append(ln)
+        j = i + 1
+        while j < len(lines) and j - i <= frames_after and CONT_RE.match(lines[j]):
+            if j not in kept_idx:
+                kept_idx.add(j)
+                keep.append(lines[j])
+            j += 1
     if len(keep) > max_signal:
         omitted = len(keep) - max_signal
         keep = keep[: max_signal // 2] + [
@@ -70,6 +89,12 @@ def drain(text: str, max_groups: int = 40, samples: int = 1) -> str | None:
         for s in members[:samples]:
             if s != tmpl:
                 out.append(f"         e.g. {s[:200]}")
+    # templates are sorted by count, which loses time order — keep the raw
+    # tail, where a crash usually is
+    tail = [ln for ln in text.splitlines()[-5:] if ln.strip()]
+    if tail:
+        out.append("[scrim] last lines:")
+        out.extend(ln[:240] for ln in tail)
     body = "\n".join(out)
     if len(body) >= len(text) * 0.9:
         return None

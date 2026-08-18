@@ -94,6 +94,11 @@ def _wrap_text(resp: Any, text: str, *, mcp: bool) -> dict:
         updated = dict(resp)
         updated["stdout"] = text
         return {"updated_tool_output": updated}
+    # Codex shell/exec deliver {"output": ...}; keep that shape
+    if isinstance(resp, dict) and isinstance(resp.get("output"), str):
+        updated = dict(resp)
+        updated["output"] = text
+        return {"updated_tool_output": updated}
     if isinstance(resp, dict) and isinstance(resp.get("content"), str):
         updated = dict(resp)
         updated["content"] = text

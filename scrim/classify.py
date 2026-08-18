@@ -17,18 +17,33 @@ LOG_RE = re.compile(
 SEGMENT_RE = re.compile(r"\|\||&&|[|;&]")
 SEARCH_HEAD_RE = re.compile(r"^(rg|grep|egrep|fgrep|ag|ack)\b|^git\s+grep\b", re.I)
 LIST_HEAD_RE = re.compile(r"^(ls|find|tree|fd|eza|exa)\b|^git\s+ls-files\b", re.I)
+# our own retrieval: thinning `scrim get` would re-shrink the blob the
+# agent explicitly asked to recover, and re-stash it under a new id
+SCRIM_GET_RE = re.compile(r"\bscrim(\.py)?\s+get\b")
 
 
 def segments(cmd: str) -> list[str]:
     return [s.strip() for s in SEGMENT_RE.split(cmd) if s.strip()]
 
 
+def argv_to_command(argv: list) -> str:
+    """Codex sends shell commands as argv, e.g. ["bash", "-lc", "pytest -q"].
+    The element after -c/-lc is the actual script; else join what's stringy."""
+    parts = [a for a in argv if isinstance(a, str)]
+    for i, a in enumerate(parts[:-1]):
+        if a in {"-c", "-lc", "-cl"} or (a.startswith("-") and a.endswith("c") and len(a) <= 4):
+            return parts[i + 1]
+    return " ".join(parts)
+
+
 def command_of(tool_input: Any) -> str:
     if isinstance(tool_input, dict):
-        for k in ("command", "cmd", "pattern", "query"):
+        for k in ("command", "cmd", "pattern", "query", "input"):
             v = tool_input.get(k)
             if isinstance(v, str) and v:
                 return v
+            if isinstance(v, list) and v:
+                return argv_to_command(v)
     if isinstance(tool_input, str):
         return tool_input
     return ""
@@ -50,7 +65,11 @@ def classify(tool_name: str, tool_input: Any) -> str:
         return "web"
     if n.startswith("mcp__") or "mcp" in n:
         return "mcp"
-    if n in {"bash", "shell", "zsh"}:
+    # "exec" is Codex code-mode: JS in tool_input["input"] whose embedded
+    # commands still name the runner, so the same command regexes apply
+    if n in {"bash", "shell", "zsh", "exec"}:
+        if SCRIM_GET_RE.search(cmd):
+            return "other"
         # test runners first: `pytest && ls` should get FAIL-line thinning,
         # not head/tail that can drop the failure
         if TEST_RE.search(cmd):
