@@ -22,7 +22,7 @@ Stop
 
 `/scrim` should spawn **scrim-analyst** (Haiku). Stash pulls go through **scrim-retrieve** so the parent never loads the blob.
 
-`SubagentStart` / `SubagentStop` count swarms and inject a hint past `max_open_subagents`. Claude Code does not let a hook cancel a spawn.
+`SubagentStart` / `SubagentStop` count swarms and inject a hint past `max_open_subagents`. Claude Code does not let a hook cancel a spawn. `PreCompact` is logged too — each compaction is a window that overflowed, and `/scrim` reports the count.
 
 The hook cannot change the session model. Routing Opus → Haiku is a different process.
 

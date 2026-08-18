@@ -23,6 +23,31 @@ RG_BOUNDED_RE = re.compile(
 )
 
 
+def _script_of(raw: Any) -> tuple[str | None, int | None]:
+    """The rewritable shell script inside `command`, plus its argv index.
+
+    Codex sends argv like ["bash", "-lc", "<script>"]; only that script slot
+    is safe to rewrite — bare argv with no shell must be left alone."""
+    if isinstance(raw, str):
+        return (raw, None) if raw else (None, None)
+    if isinstance(raw, list):
+        for i, a in enumerate(raw[:-1]):
+            if a in {"-c", "-lc", "-cl"} and isinstance(raw[i + 1], str):
+                return raw[i + 1], i + 1
+    return None, None
+
+
+def _rebuild(tool_input: dict, raw: Any, script_idx: int | None, new_cmd: str) -> dict:
+    updated = dict(tool_input)
+    if script_idx is None:
+        updated["command"] = new_cmd
+    else:
+        argv = list(raw)
+        argv[script_idx] = new_cmd
+        updated["command"] = argv
+    return updated
+
+
 def constrain(tool_name: str, tool_input: Any, cfg: dict) -> dict:
     if not cfg.get("pretool", True):
         return {}
@@ -34,23 +59,27 @@ def constrain(tool_name: str, tool_input: Any, cfg: dict) -> dict:
             updated["head_limit"] = cap
             return {"updated_input": updated, "note": f"grep head_limit={cap}"}
 
-    if name in {"Bash", "bash", "Shell"} and isinstance(tool_input, dict):
-        cmd = tool_input.get("command") or ""
-        if not isinstance(cmd, str) or "|" in cmd or ">" in cmd:
+    if name in {"Bash", "bash", "Shell", "shell"} and isinstance(tool_input, dict):
+        raw = tool_input.get("command")
+        cmd, script_idx = _script_of(raw)
+        if cmd is None or "|" in cmd or ">" in cmd:
             return {}
         segs = segments(cmd)
         if any(LIST_HEAD_RE.match(s) for s in segs):
             if FIND_MUTATING_RE.search(cmd):
                 return {}
             n = int(cfg.get("ls_max_lines") or 200)
-            updated = dict(tool_input)
-            updated["command"] = f"({cmd}) | head -n {n}"
+            updated = _rebuild(tool_input, raw, script_idx, f"({cmd}) | head -n {n}")
             return {"updated_input": updated, "note": f"piped head -n {n}"}
         if segs and RG_HEAD_RE.match(segs[-1]) and not RG_BOUNDED_RE.search(cmd):
             n = int(cfg.get("grep_max_count") or 80)
-            updated = dict(tool_input)
-            updated["command"] = f"{cmd} --max-count {n}"
-            return {"updated_input": updated, "note": f"rg --max-count {n}"}
+            caps = f"--max-count {n}"
+            # one hit in minified JS can be a 200 KB line; --max-count can't help
+            cols = int(cfg.get("rg_max_columns") or 0)
+            if cols and "--max-columns" not in cmd:
+                caps += f" --max-columns {cols}"
+            updated = _rebuild(tool_input, raw, script_idx, f"{cmd} {caps}")
+            return {"updated_input": updated, "note": f"rg {caps}"}
 
     lname = name.lower()
     if "chrome" in lname or "playwright" in lname:

@@ -94,6 +94,69 @@ def test_list_prices():
     assert price_for("claude-haiku-4-5-20251001") == (1.0, 5.0)
     # Fable is priced above Opus tier — undercounting it hides real burn
     assert price_for("claude-fable-5") == (10.0, 50.0)
+    assert price_for("gpt-5.6-terra") == (1.25, 10.0)
+    assert price_for("gpt-5-mini-2026-01") == (0.25, 2.0)
+
+
+def _codex_rollout(tmp: Path, day_dir: str, model: str, events: int) -> None:
+    d = tmp / day_dir
+    d.mkdir(parents=True, exist_ok=True)
+    rows = [
+        {"timestamp": "2026-08-18T10:00:00.000Z", "type": "session_meta",
+         "payload": {"session_id": "c1"}},
+        {"timestamp": "2026-08-18T10:00:01.000Z", "type": "turn_context",
+         "payload": {"model": model, "cwd": "/tmp"}},
+    ]
+    for i in range(events):
+        rows.append({
+            "timestamp": f"2026-08-18T10:00:{i+2:02d}.000Z",
+            "type": "event_msg",
+            "payload": {"type": "token_count", "info": {
+                "last_token_usage": {
+                    "input_tokens": 1000, "cached_input_tokens": 900,
+                    "output_tokens": 50, "total_tokens": 1050,
+                },
+            }},
+        })
+    # info-less rate-limit updates must not count as turns
+    rows.append({"timestamp": "2026-08-18T10:01:00.000Z", "type": "event_msg",
+                 "payload": {"type": "token_count", "info": None}})
+    with (d / "rollout-test.jsonl").open("w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+
+
+def test_daily_usage_buckets():
+    from datetime import datetime, timezone
+
+    from scrim.observe import daily_usage
+
+    ts = datetime.now(timezone.utc).isoformat()
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "t.jsonl"
+        with p.open("w") as f:
+            for r in (_row(ts, mid="m1", rid="r1"), _row(ts, mid="m2", rid="r2")):
+                f.write(json.dumps(r) + "\n")
+        u = daily_usage(2, root=Path(td))
+        day = local_day(ts)
+        assert day is not None
+        assert u[day]["turns"] == 2
+        assert u[day]["cost"] > 0
+
+
+def test_parse_codex_sessions():
+    from scrim.observe import parse_codex_sessions
+
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        _codex_rollout(tmp, "2026/08/18", "gpt-5.6-terra", 3)
+        u = parse_codex_sessions(root=tmp)
+        assert u["total"]["turns"] == 3
+        assert u["total"]["inp"] == 300      # input minus cached
+        assert u["total"]["cr"] == 2700
+        assert u["total"]["out"] == 150
+        assert "gpt-5.6-terra" in u["models"]
+        assert u["total"]["cost"] > 0
 
 
 if __name__ == "__main__":

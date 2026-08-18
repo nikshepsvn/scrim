@@ -17,8 +17,15 @@ if str(ROOT) not in sys.path:
 
 import scrim as scrim_pkg
 from scrim.config import config_path, data_dir, load_config, load_config_report
-from scrim.metrics import metrics_path, prune_metrics, summarize
-from scrim.observe import parse_projects, parse_transcript
+from scrim.metrics import daily_tools, metrics_path, prune_metrics, summarize
+from scrim.observe import (
+    daily_codex,
+    daily_usage,
+    parse_codex_sessions,
+    parse_projects,
+    parse_transcript,
+    window_start,
+)
 from scrim.report import render
 from scrim.stash import blobs_dir, entries as stash_entries, gc as stash_gc, get as stash_get
 from scrim.timeutil import today_local
@@ -30,11 +37,15 @@ def cmd_report(today: bool, session_path: str | None, as_json: bool) -> int:
         usage = parse_transcript(Path(session_path))
     else:
         usage = parse_projects(day)
+    codex = None if session_path else parse_codex_sessions(day)
     tools = summarize(day)
     if as_json:
-        print(json.dumps({"day": day, "usage": usage, "tools": tools}, default=str, indent=2))
+        print(json.dumps(
+            {"day": day, "usage": usage, "codex": codex, "tools": tools},
+            default=str, indent=2,
+        ))
         return 0
-    text = render(usage, tools)
+    text = render(usage, tools, codex)
     print(text, end="")
     print(f"data: {data_dir()}")
     try:
@@ -98,6 +109,39 @@ def cmd_kinds(today: bool) -> int:
     for kind, v in kinds.items():
         saved = max(0, v["in"] - v["out"])
         print(f"{kind:<16} {v['n']:>6} {v['in']/1e6:>8.2f} {v['out']/1e6:>8.2f} {saved/1e6:>9.2f}")
+    return 0
+
+
+def cmd_days(days_arg: str | None) -> int:
+    days = 7
+    if days_arg:
+        try:
+            days = max(1, min(90, int(days_arg)))
+        except ValueError:
+            print(f"scrim: days wants a day count, got {days_arg!r}", file=sys.stderr)
+            return 2
+    claude = daily_usage(days)
+    codex = daily_codex(days)
+    tools = daily_tools(window_start(days))
+    all_days = sorted(set(claude) | set(codex) | set(tools), reverse=True)
+    if not all_days:
+        print("no usage in range")
+        return 0
+    print(f"last {days} days  (list prices, not Stripe)")
+    print(f"{'day':<12} {'claude $':>9} {'codex $':>8} {'turns':>7} {'tool MB in→out':>18}")
+    for day in all_days:
+        c = claude.get(day) or {}
+        x = codex.get(day) or {}
+        t = tools.get(day) or {}
+        turns = (c.get("turns") or 0) + (x.get("turns") or 0)
+        mb = f"{(t.get('in') or 0)/1e6:.2f} → {(t.get('out') or 0)/1e6:.2f}" if t else "-"
+        print(
+            f"{day:<12} {c.get('cost') or 0:>9,.0f} {x.get('cost') or 0:>8,.0f} "
+            f"{turns:>7,} {mb:>18}"
+        )
+    total_c = sum(v["cost"] for v in claude.values())
+    total_x = sum(v["cost"] for v in codex.values())
+    print(f"{'total':<12} {total_c:>9,.0f} {total_x:>8,.0f}")
     return 0
 
 
@@ -178,6 +222,13 @@ def cmd_doctor() -> int:
     else:
         _doctor_line(False, "transcripts", f"{proj} missing — usage report will be empty")
 
+    codex = Path.home() / ".codex" / "sessions"
+    if codex.exists():
+        count = sum(1 for _ in codex.rglob("*.jsonl"))
+        _doctor_line(True, "codex", f"{count} rollout files under {codex}")
+    else:
+        _doctor_line(True, "codex", "not installed (no ~/.codex/sessions)")
+
     return 1 if hard_fail else 0
 
 
@@ -195,10 +246,10 @@ def main() -> int:
     p.add_argument(
         "cmd",
         nargs="?",
-        choices=["get", "stashes", "kinds", "doctor", "prune"],
-        help="get <id> [range] | stashes | kinds | doctor | prune [days]",
+        choices=["get", "stashes", "kinds", "days", "doctor", "prune"],
+        help="get <id> [range] | stashes | kinds | days [n] | doctor | prune [days]",
     )
-    p.add_argument("target", nargs="?", help="stash id (get) or day count (prune)")
+    p.add_argument("target", nargs="?", help="stash id (get) or day count (days/prune)")
     p.add_argument("lines", nargs="?", help="start-end line range (get)")
     args = p.parse_args()
 
@@ -221,6 +272,8 @@ def main() -> int:
         return cmd_stashes()
     if args.cmd == "kinds":
         return cmd_kinds(args.today)
+    if args.cmd == "days":
+        return cmd_days(args.target)
     if args.cmd == "doctor":
         return cmd_doctor()
     if args.cmd == "prune":

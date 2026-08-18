@@ -3,22 +3,28 @@
 from __future__ import annotations
 
 
-def render(usage: dict, tools: dict) -> str:
-    lines = ["Scrim"]
+def _usage_block(title: str, usage: dict, lines: list[str]) -> None:
     tot = (usage or {}).get("total") or {}
-    if tot.get("turns"):
-        cr_pct = (usage.get("cache_read_share") or 0) * 100
-        lines.append("Usage  (list prices, not Stripe)")
-        lines.append(
-            f"  ${tot['cost']:,.0f} API-eq   turns {tot['turns']:,}   "
-            f"cache-read {tot['cr']:,} ({cr_pct:.0f}%)   "
-            f"cache-write {tot['cw']:,}   out {tot['out']:,}"
-        )
-        models = usage.get("models") or {}
-        for model, m in sorted(models.items(), key=lambda kv: -kv[1]["cost"])[:8]:
-            lines.append(f"    {model:<32} ${m['cost']:,.0f}   {m['turns']:,} turns")
-    else:
-        lines.append("Usage  (no transcript turns in range)")
+    if not tot.get("turns"):
+        lines.append(f"{title}  (no turns in range)")
+        return
+    cr_pct = ((usage or {}).get("cache_read_share") or 0) * 100
+    lines.append(f"{title}  (list prices, not Stripe)")
+    lines.append(
+        f"  ${tot['cost']:,.0f} API-eq   turns {tot['turns']:,}   "
+        f"cache-read {tot['cr']:,} ({cr_pct:.0f}%)   "
+        f"cache-write {tot['cw']:,}   out {tot['out']:,}"
+    )
+    models = (usage or {}).get("models") or {}
+    for model, m in sorted(models.items(), key=lambda kv: -kv[1]["cost"])[:8]:
+        lines.append(f"    {model:<32} ${m['cost']:,.0f}   {m['turns']:,} turns")
+
+
+def render(usage: dict, tools: dict, codex: dict | None = None) -> str:
+    lines = ["Scrim"]
+    _usage_block("Usage", usage, lines)
+    if codex and ((codex.get("total") or {}).get("turns")):
+        _usage_block("Codex", codex, lines)
 
     lines.append("Tools  (this plugin)")
     if tools.get("n"):
@@ -40,6 +46,10 @@ def render(usage: dict, tools: dict) -> str:
             lines.append(f"  stashed originals  {tools['stashes']:,}  (scrim get <id>)")
         if tools.get("swarms"):
             lines.append(f"  subagents spawned  {tools['swarms']:,}")
+        if tools.get("compactions"):
+            lines.append(
+                f"  compactions  {tools['compactions']:,}  (each one = a window that overflowed)"
+            )
     else:
         lines.append("  no hook metrics yet — install the plugin and run a tool")
     return "\n".join(lines) + "\n"

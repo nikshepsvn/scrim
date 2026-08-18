@@ -30,6 +30,8 @@ Unknown keys are ignored. Missing keys use defaults. A value of the wrong type f
 | `pretool` | `true` | Cap unbounded `ls`/`rg`/`Grep` before they run |
 | `ls_max_lines` | `200` | `head -n` for recursive `ls` / `find` / `tree`. Pipes, redirects, and mutating `find` (`-exec`/`-delete`/…) are never rewritten |
 | `grep_max_count` | `80` | `Grep.head_limit` and `rg --max-count` |
+| `rg_max_columns` | `300` | `rg --max-columns` — one minified-JS hit can be a 200 KB line. `0` disables |
+| `codex_block_thin` | `false` | On Codex, thin builtin output via `decision:"block"` (its only shipped replacement lever). The replacement is framed as feedback, so this is opt-in |
 | `stash` | `true` | Keep omitted originals in `~/.scrim/blobs/` |
 | `stash_ttl_days` | `7` | Delete older blobs |
 | `stash_max_mb` | `512` | Cap stash dir |

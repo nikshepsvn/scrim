@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import time
 from collections import defaultdict
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from .prices import cost_usd
@@ -117,6 +117,169 @@ def parse_projects(day: str | None = None) -> dict:
             for k in ("turns", "inp", "out", "cr", "cw", "cw1h", "cost"):
                 acc[k] += m[k]
     return _rollup(models, None, None, None, None)
+
+
+def parse_codex_sessions(day: str | None = None, root: Path | None = None) -> dict:
+    """Usage from Codex CLI rollout files (~/.codex/sessions/YYYY/MM/DD).
+
+    The model rides on turn_context; each token_count event with an `info`
+    block is one API request whose last_token_usage is that request's bill.
+    cached_input_tokens is a subset of input_tokens, so it maps to cache-read
+    and the remainder to fresh input. Codex has no cache-write premium."""
+    root = root or Path.home() / ".codex" / "sessions"
+    models: dict[str, dict] = defaultdict(lambda: {
+        "turns": 0, "inp": 0, "out": 0, "cr": 0, "cw": 0, "cw1h": 0, "cost": 0.0
+    })
+    if not root.exists():
+        return _empty()
+    min_mtime = _day_start_epoch(day) if day else None
+    for path in root.rglob("*.jsonl"):
+        if min_mtime is not None:
+            try:
+                if path.stat().st_mtime < min_mtime:
+                    continue
+            except OSError:
+                continue
+        try:
+            fh = path.open(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        model = "unknown"
+        with fh:
+            for line in fh:
+                if not line.startswith("{"):
+                    continue
+                try:
+                    o = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                p = o.get("payload") or {}
+                if o.get("type") == "turn_context" and p.get("model"):
+                    model = p["model"]
+                    continue
+                if p.get("type") != "token_count":
+                    continue
+                info = p.get("info") or {}
+                last = info.get("last_token_usage") or {}
+                if not last:
+                    continue
+                if day and local_day(o.get("timestamp")) != day:
+                    continue
+                inp_total = last.get("input_tokens") or 0
+                cr = last.get("cached_input_tokens") or 0
+                inp = max(0, inp_total - cr)
+                out = last.get("output_tokens") or 0
+                m = models[model]
+                m["turns"] += 1
+                m["inp"] += inp
+                m["out"] += out
+                m["cr"] += cr
+                m["cost"] += cost_usd(model, inp, out, cr, 0, 0)
+    return _rollup(models, None, None, None, None)
+
+
+def window_start(days: int) -> str:
+    """First local day of a trailing window that ends today."""
+    return (date.today() - timedelta(days=max(1, days) - 1)).isoformat()
+
+
+def daily_usage(days: int = 7, root: Path | None = None) -> dict[str, dict]:
+    """Claude transcript cost/turns bucketed by local day, one pass."""
+    start = window_start(days)
+    root = root or Path.home() / ".claude" / "projects"
+    acc: dict[str, dict] = defaultdict(lambda: {"cost": 0.0, "turns": 0})
+    if not root.exists():
+        return {}
+    min_mtime = _day_start_epoch(start)
+    seen: set = set()
+    for path in root.rglob("*.jsonl"):
+        try:
+            if min_mtime is not None and path.stat().st_mtime < min_mtime:
+                continue
+            fh = path.open(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        with fh:
+            for line in fh:
+                if not line.startswith("{"):
+                    continue
+                try:
+                    o = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if o.get("type") != "assistant":
+                    continue
+                day = local_day(o.get("timestamp"))
+                if not day or day < start:
+                    continue
+                msg = o.get("message") or {}
+                if not isinstance(msg, dict) or msg.get("model") == "<synthetic>":
+                    continue
+                u = msg.get("usage") or {}
+                if not u:
+                    continue
+                mid, rid = msg.get("id"), o.get("requestId") or o.get("request_id")
+                if mid and rid:
+                    if (mid, rid) in seen:
+                        continue
+                    seen.add((mid, rid))
+                cc = u.get("cache_creation") or {}
+                cw1h = cc.get("ephemeral_1h_input_tokens") if isinstance(cc, dict) else 0
+                d = acc[day]
+                d["turns"] += 1
+                d["cost"] += cost_usd(
+                    msg.get("model") or "unknown",
+                    u.get("input_tokens") or 0,
+                    u.get("output_tokens") or 0,
+                    u.get("cache_read_input_tokens") or 0,
+                    u.get("cache_creation_input_tokens") or 0,
+                    cw1h or 0,
+                )
+    return dict(acc)
+
+
+def daily_codex(days: int = 7, root: Path | None = None) -> dict[str, dict]:
+    """Codex rollout cost/requests bucketed by local day."""
+    start = window_start(days)
+    root = root or Path.home() / ".codex" / "sessions"
+    acc: dict[str, dict] = defaultdict(lambda: {"cost": 0.0, "turns": 0})
+    if not root.exists():
+        return {}
+    min_mtime = _day_start_epoch(start)
+    for path in root.rglob("*.jsonl"):
+        try:
+            if min_mtime is not None and path.stat().st_mtime < min_mtime:
+                continue
+            fh = path.open(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        model = "unknown"
+        with fh:
+            for line in fh:
+                if not line.startswith("{"):
+                    continue
+                try:
+                    o = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                p = o.get("payload") or {}
+                if o.get("type") == "turn_context" and p.get("model"):
+                    model = p["model"]
+                    continue
+                if p.get("type") != "token_count":
+                    continue
+                last = (p.get("info") or {}).get("last_token_usage") or {}
+                if not last:
+                    continue
+                day = local_day(o.get("timestamp"))
+                if not day or day < start:
+                    continue
+                cr = last.get("cached_input_tokens") or 0
+                inp = max(0, (last.get("input_tokens") or 0) - cr)
+                d = acc[day]
+                d["turns"] += 1
+                d["cost"] += cost_usd(model, inp, last.get("output_tokens") or 0, cr, 0, 0)
+    return dict(acc)
 
 
 def _empty() -> dict:

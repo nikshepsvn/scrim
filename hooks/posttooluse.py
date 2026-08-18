@@ -46,6 +46,26 @@ def main() -> int:
         tool_input = data.get("tool_input")
         tool_response = data.get("tool_response")
         decision = shrink_tool(tool_name, tool_input, tool_response, cfg)
+        # Codex stamps turn_id on hook input; its PostToolUse output schema
+        # (additionalProperties: false) accepts updatedMCPToolOutput but not
+        # updatedToolOutput, so a builtin-tool rewrite would be rejected
+        # whole. Codex's only shipped replacement lever is decision:"block",
+        # whose reason text replaces the tool result — opt in via
+        # codex_block_thin. Otherwise track those calls instead of claiming
+        # a thin that never reached the model.
+        codex = "turn_id" in data
+        if codex and decision.get("updated_mcp_output") is None:
+            if decision.get("updated_tool_output") is not None:
+                if cfg.get("codex_block_thin"):
+                    decision["codex_block"] = True
+                    decision["note"] = (decision.get("note") or "") + "; codex-block"
+                else:
+                    decision.pop("updated_tool_output")
+                    decision["bytes_out"] = decision["bytes_in"]
+                    decision["shrunk"] = False
+                    # metrics-only: additionalContext would spam the model
+                    decision["log_note"] = "codex: builtin output not rewritable"
+                    decision["note"] = ""
         stash_id = None
         if decision.get("shrunk") and cfg.get("stash", True):
             try:
@@ -74,12 +94,22 @@ def main() -> int:
                     "bytes_out": decision["bytes_out"],
                     "shrunk": decision["shrunk"],
                     "kind": decision.get("kind") or "",
-                    "note": (decision.get("note") or "")[:200],
+                    "note": (decision.get("note") or decision.get("log_note") or "")[:200],
                     "stash_id": stash_id,
                 }
             )
         except Exception:
             pass  # a full disk must not cost us the thinned output
+        if decision.get("codex_block"):
+            # block's reason replaces the tool result on Codex; say the tool
+            # succeeded so the model doesn't retry a command that worked
+            body = response_text(decision.get("updated_tool_output")) or ""
+            reason = (
+                "[scrim] The tool ran successfully. Its full output was "
+                "replaced with this signal-only view:\n" + body
+            )
+            print(json.dumps({"decision": "block", "reason": reason}), file=sys.stdout)
+            return 0
         hook: dict = {"hookEventName": "PostToolUse"}
         if decision.get("updated_tool_output") is not None:
             hook["updatedToolOutput"] = decision["updated_tool_output"]

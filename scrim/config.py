@@ -26,6 +26,8 @@ DEFAULTS = {
     "pretool": True,
     "ls_max_lines": 200,
     "grep_max_count": 80,
+    "rg_max_columns": 300,
+    "codex_block_thin": False,
     "stash": True,
     "stash_ttl_days": 7,
     "stash_max_mb": 512,

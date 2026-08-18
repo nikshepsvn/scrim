@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+New:
+
+- `scrim days [n]` — daily trend table: Claude $, Codex $, turns, tool MB in→out per local day (default 7).
+- Compaction tracking: `PreCompact` is logged (`kind: compact`), and `/scrim` reports the count — each compaction is a window that overflowed.
+- `codex_block_thin` (opt-in): on Codex, thin builtin output through the shipped `decision:"block"` replacement lever, with a "tool ran successfully" preface and the usual stash.
+- `rg_max_columns` (default 300): unbounded `rg` also gets `--max-columns` — one minified-JS hit can be a 200 KB line that `--max-count` can't touch.
+- `hooks/subagent.py` → `hooks/events.py` (now logs swarms *and* compactions).
+
+Codex, first-class (verified live against codex-cli 0.146.1, which ships stable Claude-format hooks):
+
+- `make codex-hooks` installs `codex/hooks.json` (PreToolUse, PostToolUse, Subagent, Stop) into `~/.codex/hooks.json`; `codex/README.md` documents the trust step and exactly what works.
+- Argv commands (`["bash", "-lc", "pytest -q"]`) classify and constrain like their string forms; Codex's code-mode `exec` tool classifies by its embedded command; `{"output": …}` responses keep their shape on rewrite.
+- Codex's PostToolUse schema rejects `updatedToolOutput` (`additionalProperties: false`), so on Codex (detected via `turn_id`) the hook goes observe-only for builtin tools instead of logging thins that never reached the model. MCP rewrites still emit `updatedMCPToolOutput` for when Codex starts applying it.
+- `/scrim` and `--backfill` grow a **Codex** usage block parsed from `~/.codex/sessions` rollouts (per-model, cached-input share, GPT list prices); `doctor` reports the rollout count.
+
+Filter quality:
+
+- Retrieving a stash (`scrim get`) is exempt from thinning — it used to re-shrink and re-stash the very blob the agent asked to recover.
+- Signal-line thinning keeps stack-trace frames (Python `File "…"`, JS `at …`, indented context) under each FAIL/Error line, not just the header and exception.
+- Log templating (`drain`) appends the raw last lines — the crash is usually at the end, and count-sorted templates lost time order.
+
 Identity redesign: lamp-through-cloth mark, single banner lockup, and a before/after diagram (`assets/diagram.svg`) replacing the ASCII box. README restructured — what / why / install first, reducer and Codex parked below.
 
 ## 0.7.0

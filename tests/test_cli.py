@@ -99,6 +99,87 @@ def test_posttooluse_thins_and_exits_zero():
     assert "scrim get" in hook["additionalContext"]
 
 
+def test_posttooluse_codex_never_emits_updated_tool_output():
+    # Codex's PostToolUse output schema (additionalProperties: false) rejects
+    # updatedToolOutput; the hook must go observe-only for builtin tools there
+    payload = json.dumps({
+        "session_id": "codex-test",
+        "turn_id": "t-1",
+        "tool_name": "shell",
+        "tool_input": {"command": ["bash", "-lc", "pytest -q"], "workdir": "/tmp"},
+        "tool_response": {"output": "\n".join(["PASS a"] * 400 + ["FAIL b", "AssertionError: boom"])},
+        "tool_use_id": "call_codextest1",
+    })
+    r = _hook("posttooluse.py", payload)
+    assert r.returncode == 0, r.stderr
+    out = json.loads(r.stdout)
+    hook = out.get("hookSpecificOutput") or {}
+    assert "updatedToolOutput" not in hook
+    assert "updatedMCPToolOutput" not in hook
+
+
+def test_pretooluse_codex_argv_updated_input():
+    payload = json.dumps({
+        "turn_id": "t-1",
+        "tool_name": "shell",
+        "tool_input": {"command": ["bash", "-lc", "ls -R /"], "workdir": "/tmp"},
+    })
+    r = _hook("pretooluse.py", payload)
+    assert r.returncode == 0, r.stderr
+    out = json.loads(r.stdout)
+    argv = out["hookSpecificOutput"]["updatedInput"]["command"]
+    assert argv[0] == "bash" and "head -n" in argv[2]
+
+
+def test_posttooluse_codex_block_thin_opt_in():
+    # with codex_block_thin on, the hook uses Codex's decision:"block" lever —
+    # the reason text replaces the tool result the model sees
+    with tempfile.TemporaryDirectory(prefix="scrim-blockthin-") as td:
+        (Path(td) / "config.json").write_text(json.dumps({"codex_block_thin": True}))
+        payload = json.dumps({
+            "session_id": "codex-test",
+            "turn_id": "t-1",
+            "tool_name": "shell",
+            "tool_input": {"command": ["bash", "-lc", "pytest -q"]},
+            "tool_response": {"output": "\n".join(["PASS a"] * 400 + ["FAIL b", "AssertionError: boom"])},
+            "tool_use_id": "call_codexblock1",
+        })
+        r = subprocess.run(
+            ["sh", str(ROOT / "hooks" / "run.sh"), "posttooluse.py"],
+            input=payload, capture_output=True, text=True,
+            env={**ENV, "SCRIM_DATA_DIR": td}, timeout=30,
+        )
+        assert r.returncode == 0, r.stderr
+        out = json.loads(r.stdout)
+        assert out["decision"] == "block"
+        assert "FAIL b" in out["reason"]
+        assert "ran successfully" in out["reason"]
+        assert "hookSpecificOutput" not in out
+
+
+def test_events_logs_compaction():
+    with tempfile.TemporaryDirectory(prefix="scrim-compact-") as td:
+        payload = json.dumps({
+            "hook_event_name": "PreCompact",
+            "session_id": "s-compact",
+            "trigger": "auto",
+        })
+        r = subprocess.run(
+            ["sh", str(ROOT / "hooks" / "run.sh"), "events.py"],
+            input=payload, capture_output=True, text=True,
+            env={**ENV, "SCRIM_DATA_DIR": td}, timeout=30,
+        )
+        assert r.returncode == 0, r.stderr
+        row = json.loads((Path(td) / "metrics.jsonl").read_text().splitlines()[-1])
+        assert row["kind"] == "compact"
+        assert row["tool_name"] == "auto"
+
+
+def test_days_runs():
+    r = _run(["days", "3"])
+    assert r.returncode == 0, r.stderr
+
+
 def test_pretooluse_caps_ls():
     payload = json.dumps({"tool_name": "Bash", "tool_input": {"command": "ls -R /"}})
     r = _hook("pretooluse.py", payload)
@@ -125,7 +206,7 @@ def test_posttooluse_thins_even_with_dead_data_dir():
 
 
 def test_hooks_fail_open_on_garbage():
-    for name in ("pretooluse.py", "posttooluse.py", "stop.py", "subagent.py"):
+    for name in ("pretooluse.py", "posttooluse.py", "stop.py", "events.py"):
         r = _hook(name, "this is not json{{{")
         assert r.returncode == 0, f"{name}: rc={r.returncode} {r.stderr}"
         if r.stdout.strip():

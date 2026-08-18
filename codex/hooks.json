@@ -1,13 +1,14 @@
 {
-  "description": "Track tool sizes and optionally thin what the model reads",
+  "description": "Scrim: track tool sizes, cap listings before they run (SCRIM_ROOT is replaced by make codex-hooks)",
   "hooks": {
     "PreToolUse": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run.sh pretooluse.py",
-            "timeout": 5
+            "command": "SCRIM_ROOT/hooks/run.sh pretooluse.py",
+            "timeout": 5,
+            "statusMessage": "scrim: capping listings"
           }
         ]
       }
@@ -17,8 +18,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run.sh posttooluse.py",
-            "timeout": 25
+            "command": "SCRIM_ROOT/hooks/run.sh posttooluse.py",
+            "timeout": 25,
+            "statusMessage": "scrim: tracking tool output"
           }
         ]
       }
@@ -28,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run.sh events.py",
+            "command": "SCRIM_ROOT/hooks/run.sh events.py",
             "timeout": 5
           }
         ]
@@ -39,7 +41,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run.sh events.py",
+            "command": "SCRIM_ROOT/hooks/run.sh events.py",
             "timeout": 5
           }
         ]
@@ -50,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run.sh events.py",
+            "command": "SCRIM_ROOT/hooks/run.sh events.py",
             "timeout": 5
           }
         ]
@@ -61,7 +63,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run.sh stop.py",
+            "command": "SCRIM_ROOT/hooks/run.sh stop.py",
             "timeout": 10
           }
         ]

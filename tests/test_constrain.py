@@ -60,6 +60,19 @@ def test_rg_max_count():
     assert "--max-count 20" in r["updated_input"]["command"]
 
 
+def test_rg_max_columns():
+    # a single minified-JS hit can be a 200 KB line; --max-count can't help
+    r = constrain("Bash", {"command": "rg TODO src"}, {**CFG, "rg_max_columns": 300})
+    assert "--max-columns 300" in r["updated_input"]["command"]
+    # user already set --max-columns: still capped by count, not doubled up
+    r = constrain("Bash", {"command": "rg --max-columns 80 TODO src"}, {**CFG, "rg_max_columns": 300})
+    assert r["updated_input"]["command"].count("--max-columns") == 1
+    assert "--max-count 20" in r["updated_input"]["command"]
+    # 0 disables the column cap
+    r2 = constrain("Bash", {"command": "rg -S TODO"}, {**CFG, "rg_max_columns": 0})
+    assert "--max-columns" not in r2["updated_input"]["command"]
+
+
 def test_rg_already_bounded():
     assert constrain("Bash", {"command": "rg -l TODO src"}, CFG) == {}
     assert constrain("Bash", {"command": "rg --files-with-matches TODO"}, CFG) == {}
@@ -70,6 +83,24 @@ def test_rg_already_bounded():
 def test_rg_after_cd():
     r = constrain("Bash", {"command": "cd src && rg TODO"}, CFG)
     assert r["updated_input"]["command"].endswith("--max-count 20")
+
+
+def test_codex_argv_ls_capped():
+    r = constrain("shell", {"command": ["bash", "-lc", "ls -R src"], "workdir": "/tmp"}, CFG)
+    argv = r["updated_input"]["command"]
+    assert argv[:2] == ["bash", "-lc"]
+    assert argv[2] == "(ls -R src) | head -n 50"
+    assert r["updated_input"]["workdir"] == "/tmp"
+
+
+def test_codex_argv_rg_capped():
+    r = constrain("shell", {"command": ["bash", "-lc", "rg TODO src"]}, CFG)
+    assert r["updated_input"]["command"][2] == "rg TODO src --max-count 20"
+
+
+def test_codex_bare_argv_untouched():
+    # no -c/-lc script slot: rewriting bare argv could change what runs
+    assert constrain("shell", {"command": ["ls", "-R", "src"]}, CFG) == {}
 
 
 def test_off():

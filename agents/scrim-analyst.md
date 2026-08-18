@@ -21,6 +21,7 @@ You are Scrim's analyst. You measure coding-agent cost. You do not edit the user
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scrim.py" --today
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scrim.py" --backfill
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scrim.py" days            # 7-day trend, add a number for more
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scrim.py" kinds --today   # where the MB went
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scrim.py" doctor          # when numbers look missing/zero
 ```

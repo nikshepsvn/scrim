@@ -68,6 +68,23 @@ def prune_metrics(keep_days: int = 90) -> int:
     return dropped
 
 
+def daily_tools(start_day: str) -> dict[str, dict]:
+    """Tool bytes in/out bucketed by local day, from start_day onward."""
+    acc: dict[str, dict] = defaultdict(lambda: {"in": 0, "out": 0, "n": 0})
+    for row in iter_metrics() or []:
+        if (row.get("kind") or "") in {"subagent_start", "subagent_stop", "compact"}:
+            continue
+        day = local_day(row.get("ts"))
+        if not day or day < start_day:
+            continue
+        bi = int(row.get("bytes_in") or 0)
+        d = acc[day]
+        d["n"] += 1
+        d["in"] += bi
+        d["out"] += int(row.get("bytes_out") or bi)
+    return dict(acc)
+
+
 def summarize(day: str | None = None, session_id: str | None = None) -> dict:
     """Roll up hook metrics. day is a local YYYY-MM-DD; timestamps are UTC."""
     n = 0
@@ -76,6 +93,7 @@ def summarize(day: str | None = None, session_id: str | None = None) -> dict:
     shrunk = 0
     stashes = 0
     swarms = 0
+    compactions = 0
     by_tool = defaultdict(lambda: {"n": 0, "in": 0, "out": 0})
     by_kind = defaultdict(lambda: {"n": 0, "in": 0, "out": 0})
     for row in iter_metrics() or []:
@@ -84,9 +102,11 @@ def summarize(day: str | None = None, session_id: str | None = None) -> dict:
         if session_id and row.get("session_id") != session_id:
             continue
         k = row.get("kind") or ""
-        if k in {"subagent_start", "subagent_stop"}:
+        if k in {"subagent_start", "subagent_stop", "compact"}:
             if k == "subagent_start":
                 swarms += 1
+            elif k == "compact":
+                compactions += 1
             continue
         n += 1
         bi = int(row.get("bytes_in") or 0)
@@ -113,6 +133,7 @@ def summarize(day: str | None = None, session_id: str | None = None) -> dict:
         "shrunk": shrunk,
         "stashes": stashes,
         "swarms": swarms,
+        "compactions": compactions,
         "by_tool": dict(
             sorted(by_tool.items(), key=lambda kv: -kv[1]["in"])[:12]
         ),

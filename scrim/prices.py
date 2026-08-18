@@ -11,6 +11,11 @@ PRICES = {
     "claude-sonnet-5": (3.0, 15.0),
     "claude-sonnet-4": (3.0, 15.0),
     "claude-haiku-4": (1.0, 5.0),
+    # Codex: cached input is 10% of input, same factor as Anthropic cache-read.
+    # Order matters — first prefix hit wins, so mini/nano precede bare gpt-5.
+    "gpt-5-mini": (0.25, 2.0),
+    "gpt-5-nano": (0.05, 0.40),
+    "gpt-5": (1.25, 10.0),
 }
 
 
@@ -25,6 +30,8 @@ def price_for(model: str) -> tuple[float, float]:
         return (5.0, 25.0)
     if "haiku" in m:
         return (1.0, 5.0)
+    if m.startswith("gpt") or m.startswith("o3") or m.startswith("o4"):
+        return (1.25, 10.0)  # unknown OpenAI model: bill at gpt-5 base rate
     return (3.0, 15.0)
 
 
