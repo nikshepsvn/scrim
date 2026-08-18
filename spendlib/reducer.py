@@ -23,7 +23,7 @@ Preserve exact error strings, paths, and numbers. No prose, no markdown fences.
 If nothing important, return the first 25 and last 15 lines labeled as such.
 """
 
-DEFAULT_OPENROUTER_MODEL = "google/gemini-2.5-flash"
+DEFAULT_OPENROUTER_MODEL = "inception/mercury-2"
 DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
 
 

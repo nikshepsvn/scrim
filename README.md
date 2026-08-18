@@ -1,117 +1,115 @@
 # spend
 
-Local **spend tracking** and **tool-output thinning** for [Claude Code](https://code.claude.com). Optional Codex hooks.
+Local **tool-output thinning** and **quota tracking** for [Claude Code](https://code.claude.com). Optional Codex hooks.
 
-No cloud. No API keys. Tool payloads never leave the machine. Hooks **fail open**.
+Hooks **fail open**. Source `Read`s and `Edit`s are never rewritten. Metrics never include prompts or stdout.
 
-This is not Codag. It does not change your model. On Claude Max it will not lower Stripe — it lowers **quota burn** and shows where the session went.
+This is not a billing product. On Claude Max it does not lower Stripe. It keeps chaff out of the context window and shows where the session went.
+
+## Install
+
+Private repo. Clone, then either:
+
+```bash
+git clone git@github.com:nikshepsvn/spend.git
+claude --plugin-dir /path/to/spend
+```
+
+or, from Claude Code (needs GitHub auth for a private marketplace):
+
+```text
+/plugin marketplace add nikshepsvn/spend
+/plugin install spend@spend
+```
+
+Restart Claude Code. Run a tool, then `/spend`.
+
+```bash
+python3 tests/test_shrink.py
+python3 tests/test_compress.py
+python3 tests/test_reducer.py
+```
 
 ## What it does
 
-| | |
-|---|---|
-| **Track** | Every tool call: name, bytes in/out, whether it was thinned. `~/.spend/metrics.jsonl` |
-| **Optimize output** | By kind, before the model reads it. Fail-open. Source `Read`s are never touched. |
+| Layer | Default | What |
+|---|---|---|
+| Track | on | Every tool: name, kind, bytes in/out. `~/.spend/metrics.jsonl` |
+| Filter | on | Kind-aware deterministic thinning (below) |
+| Structural | on | Fat JSON → `{_n, head, tail}`; HTML → text |
+| Model reducer | **off** | Optional OpenRouter extract (Mercury-2 recommended) |
 
-### What gets thinned
+### Kind policies
 
 | Kind | How |
 |---|---|
 | `test_build_lint` | Keep FAIL / Error / traceback + tail |
-| `log` | Template-group repetitive lines (Drain-lite) |
-| `search` (Grep / `rg`) | First N hits + tail + omitted count |
+| `log` | Drain-lite templates + counts |
+| `search` (Grep / `rg`) | First N + tail; never drop FAIL/Error hits |
 | `file_list` (`ls`, Glob) | First N paths + omitted count |
 | `mcp` (Chrome / Playwright) | Drop **images**, then cap leftover text |
 | `web` | Cap at 16 KB |
 | `bash` (other fat) | Signal lines, else head+tail |
 | `read` / `edit` | **Passthrough** |
-| **Report** | `/spend` or `python3 scripts/spend.py` |
-| **Backfill** | `python3 scripts/spend.py --backfill` reads `~/.claude/projects` usage fields (API-equivalent $) |
 
-It will **not** switch Opus → Haiku. Hooks cannot do that.
-
-## Install (Claude Code)
-
-```bash
-git clone https://github.com/YOU/spend.git
-claude --plugin-dir /path/to/spend
-```
-
-Or add the folder as a local plugin marketplace and enable `spend`. Restart Claude Code, then run a tool and `/spend`.
-
-## CLI
-
-```bash
-python3 scripts/spend.py          # all hook metrics
-python3 scripts/spend.py --today
-python3 scripts/spend.py --backfill   # historical transcript $
-python3 scripts/spend.py --config
-```
+gzip/zstd do not help. The model has to read text.
 
 ## Config
 
-`~/.spend/config.json` (created with defaults on first hook):
-
-```json
-{
-  "shrink": true,
-  "strip_images": true,
-  "thin_tests": true,
-  "thin_reads": false,
-  "bash_cap_bytes": 48000,
-  "search_keep_lines": 40,
-  "list_keep_lines": 80,
-  "web_cap_bytes": 16000,
-  "mcp_text_cap_bytes": 12000
-}
-```
+Copy [config.example.json](config.example.json) to `~/.spend/config.json`.
 
 Set `"shrink": false` to log only.
 
-### Compressor (optional)
+### OpenRouter reducer (optional)
 
-`gzip` / `zstd` do **not** help. The model has to read text, not bytes.
-
-There are two real compressors, both agent-readable:
-
-1. **Structural** (on by default) — large JSON/NDJSON becomes `{_n, head, tail}`; HTML becomes stripped text.
-2. **Model reducer** (off) — extractive pass on fat logs/bash/MCP. Fail-open, cached.
-
-**OpenRouter** (any model):
+Recommended model after a live bake-off: **`inception/mercury-2`**. Cheap, ~3s, keeps failures, templates repeated INFO. Needs ≥4096 completion tokens on fat dumps. Fail-open if OpenRouter is slow.
 
 ```bash
 export OPENROUTER_API_KEY=sk-or-...
 ```
 
+If Claude is launched from the app and does not inherit your shell env, put the key in `~/.spend/config.json` as `reducer_api_key` (that file stays on this machine; do not commit it).
+
 ```json
 {
-  "structural": true,
   "reducer": "openrouter",
-  "reducer_model": "google/gemini-2.5-flash",
-  "reducer_timeout_sec": 20,
-  "reducer_max_tokens": 4096
+  "reducer_model": "inception/mercury-2",
+  "reducer_max_tokens": 4096,
+  "reducer_timeout_sec": 20
 }
 ```
 
-Stronger (and slower/pricier) examples:
+Do not use Morph apply models (`morph/morph-v3-*`) or Inkling as the reducer. Morph reprints the dump. Inkling spends the token budget on hidden reasoning and often returns empty `content`. See [docs/eval.md](docs/eval.md).
 
-```json
-"reducer_model": "anthropic/claude-sonnet-4.5"
-"reducer_model": "google/gemini-2.5-pro"
-"reducer_model": "qwen/qwen3-32b"
+Flash (`google/gemini-2.5-flash`) is the boring backup.
+
+## CLI
+
+```bash
+python3 scripts/spend.py           # all hook metrics
+python3 scripts/spend.py --today
+python3 scripts/spend.py --backfill   # API-eq $ from ~/.claude/projects
+python3 scripts/spend.py --config
 ```
 
-**Anthropic direct** still works: `"reducer": "haiku"` + `ANTHROPIC_API_KEY`.
-
-Leave `reducer` at `"off"` unless you want to pay per fat dump. Structural + image-drop is free. Don't point this at Opus — you will spend more reducing than you save.
+`/spend` in Claude Code runs the same CLI.
 
 ## Codex
 
-Codex hooks can call the same `hooks/posttooluse.py` if you map PostToolUse in `~/.codex/hooks.json`. Replacement of tool output is first-class on Claude Code (`updatedToolOutput` / `updatedMCPToolOutput`); on Codex treat this as **tracking** unless you confirm output replacement in your CLI version.
+See [codex/README.md](codex/README.md). Tracking works. Output replacement is first-class on Claude Code; treat Codex as tracking-first unless you verify `updatedToolOutput` on your CLI version.
 
 ## Privacy
 
-Metrics rows are counts and tool names. No prompts, paths of file bodies, or stdout. Originals stay in Claude’s own transcripts.
+- Default path: nothing leaves the machine except Claude’s normal provider call.
+- Metrics: counts and tool names only.
+- Reducer path: opted-in tool output is sent to OpenRouter (or Anthropic) to produce a shorter extract. Cached under `~/.spend/reducer-cache/`.
+
+## Docs
+
+- [docs/how-it-works.md](docs/how-it-works.md)
+- [docs/config.md](docs/config.md)
+- [docs/eval.md](docs/eval.md)
+- [SECURITY.md](SECURITY.md)
 
 ## License
 

@@ -1,8 +1,12 @@
 {
   "name": "spend",
-  "version": "0.1.0",
-  "description": "Local spend tracking and tool-output thinning for Claude Code. No cloud. No payloads leave the machine.",
+  "version": "0.2.0",
+  "description": "Local tool-output thinning and quota tracking for Claude Code. Fail-open. No payloads leave the machine unless you opt into an OpenRouter reducer.",
   "author": {
-    "name": "spend"
-  }
+    "name": "nikshepsvn"
+  },
+  "homepage": "https://github.com/nikshepsvn/spend",
+  "repository": "https://github.com/nikshepsvn/spend",
+  "license": "MIT",
+  "keywords": ["claude-code", "hooks", "context", "tokens", "openrouter"]
 }

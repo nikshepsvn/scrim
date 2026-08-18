@@ -1,5 +1,5 @@
 ---
-description: Show local agent spend and what was thinned this session
+description: Show local tool-output thinning and API-equivalent spend
 ---
 
 # /spend

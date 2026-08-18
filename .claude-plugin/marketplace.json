@@ -1,0 +1,17 @@
+{
+  "name": "spend",
+  "owner": {
+    "name": "nikshepsvn",
+    "url": "https://github.com/nikshepsvn"
+  },
+  "description": "Local spend / quota plugin: thin tool output before the model reads it.",
+  "plugins": [
+    {
+      "name": "spend",
+      "source": "./",
+      "description": "Track tool bytes and thin tests, logs, greps, file lists, and Chrome screenshots. Optional OpenRouter reducer.",
+      "license": "MIT",
+      "keywords": ["hooks", "context", "tokens", "quota"]
+    }
+  ]
+}

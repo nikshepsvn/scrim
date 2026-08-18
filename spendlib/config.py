@@ -16,7 +16,7 @@ DEFAULTS = {
     "warn_session_usd": 40.0,
     "structural": True,
     "reducer": "off",
-    "reducer_model": "google/gemini-2.5-flash",
+    "reducer_model": "inception/mercury-2",
     "reducer_min_bytes": 8000,
     "reducer_max_bytes": 120000,
     "reducer_timeout_sec": 20,
