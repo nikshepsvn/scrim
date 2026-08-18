@@ -1,15 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="scrim — signal goes through, glare does not. 183,412 bytes in, 236 bytes out. 47% cut on 29k real calls, zero dropped fails. claude code + codex.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Scrim — signal goes through, glare does not. npm test emits 4,212 lines; the model reads only the failing test and its assertion. 183,412 bytes in, 236 bytes out. 47% cut on 29k real calls, zero dropped fails. Claude Code + Codex.">
   <defs>
     <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#0c0b0a"/>
-      <stop offset="0.5" stop-color="#0c0b0a"/>
+      <stop offset="0.55" stop-color="#0c0b0a"/>
       <stop offset="1" stop-color="#16120e"/>
     </linearGradient>
-    <radialGradient id="lamp" cx="0.5" cy="0.44" r="0.66">
-      <stop offset="0" stop-color="#f0c36a"/>
-      <stop offset="0.38" stop-color="#e8a04a"/>
-      <stop offset="0.72" stop-color="#e8a04a" stop-opacity="0.32"/>
-      <stop offset="1" stop-color="#e8a04a" stop-opacity="0"/>
+    <radialGradient id="pass" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f0c36a" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#f0c36a" stop-opacity="0"/>
     </radialGradient>
     <style>
       .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -18,51 +16,77 @@
 
   <rect width="1600" height="900" fill="url(#fade)"/>
 
-  <!-- ambient weave, full field -->
+  <!-- ambient weave, left field -->
   <g stroke="#e8a04a" stroke-width="1" opacity="0.06" fill="none">
-    <path d="M0 60h620M0 92h560M0 124h600M0 156h540M0 188h610M0 220h570M0 252h620M0 284h550M0 316h590M0 348h615M0 380h545M0 412h605M0 444h565M0 476h620M0 508h555M0 540h595M0 572h610M0 604h550M0 636h600M0 668h570M0 700h615M0 732h545M0 764h605M0 796h575M0 828h610M0 860h560"/>
+    <path d="M0 40h520M0 72h480M0 104h540M0 136h460M0 168h510M0 200h470M0 748h530M0 780h490M0 812h545M0 844h470M0 876h520"/>
   </g>
 
-  <!-- the lamp -->
-  <circle cx="340" cy="430" r="300" fill="url(#lamp)"/>
+  <!-- ============ header ============ -->
+  <text x="80" y="140" fill="#f4efe6" font-family="ui-serif, Georgia, 'Times New Roman', serif" font-size="92" font-weight="500" letter-spacing="-2">Scrim</text>
+  <text x="86" y="186" fill="#e8a04a" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="21" letter-spacing="2.6">SIGNAL GOES THROUGH. GLARE DOES NOT.</text>
 
-  <!-- fine threads, visible in the glow -->
-  <g stroke="#0c0b0a" stroke-width="2" opacity="0.3" fill="none">
-    <path d="M100 180h480M100 196h480M100 212h480M100 262h480M100 278h480M100 328h480M100 344h480M100 394h480M100 410h480M100 460h480M100 476h480M100 526h480M100 542h480M100 592h480M100 608h480M100 658h480M100 674h480"/>
+  <text x="1520" y="140" class="mono" font-size="20" fill="#f4efe6" fill-opacity="0.45" text-anchor="end">github.com/nikshepsvn/scrim</text>
+
+  <!-- ============ left: the glare ============ -->
+  <text x="80" y="248" class="mono" font-size="20" fill="#f4efe6" fill-opacity="0.75">$ npm test</text>
+  <text x="640" y="248" class="mono" font-size="17" fill="#f4efe6" fill-opacity="0.4" text-anchor="end">4,212 lines &#183; 183,412 bytes</text>
+
+  <rect x="80" y="266" width="560" height="392" rx="12" fill="#16120e" stroke="#f4efe6" stroke-opacity="0.08"/>
+  <g class="mono" font-size="19">
+    <text x="112" y="314" fill="#f4efe6" fill-opacity="0.38">PASS  auth        (42)</text>
+    <text x="112" y="352" fill="#f4efe6" fill-opacity="0.38">PASS  cart        (38)</text>
+    <text x="112" y="390" fill="#f4efe6" fill-opacity="0.38">PASS  orders      (57)</text>
+    <text x="112" y="428" fill="#f0c36a" font-weight="600">FAIL  checkout</text>
+    <text x="112" y="466" fill="#f4efe6" fill-opacity="0.38">PASS  shipping    (22)</text>
+    <text x="112" y="504" fill="#f4efe6" fill-opacity="0.3">PASS  billing     (19)</text>
+    <text x="112" y="542" fill="#f4efe6" fill-opacity="0.22">PASS  webhooks    (31)</text>
+    <text x="112" y="580" fill="#f4efe6" fill-opacity="0.14">PASS  search      (44)</text>
+    <text x="112" y="624" fill="#f4efe6" fill-opacity="0.32">&#8942;  4,180 more passing lines</text>
   </g>
 
-  <!-- cloth bands, denser toward the hem -->
-  <g stroke="#0c0b0a" stroke-linecap="butt" fill="none">
-    <path d="M60 226h560" stroke-width="22"/>
-    <path d="M60 306h560" stroke-width="28"/>
-    <path d="M60 388h560" stroke-width="36"/>
-    <path d="M60 472h560" stroke-width="46"/>
-    <path d="M60 560h560" stroke-width="58"/>
-    <path d="M60 652h560" stroke-width="72"/>
+  <!-- passing lines head for the model and stop at the cloth -->
+  <g stroke="#f4efe6" stroke-opacity="0.13" stroke-width="1.8">
+    <path d="M640 308h68"/>
+    <path d="M640 346h68"/>
+    <path d="M640 384h68"/>
+    <path d="M640 460h68"/>
+    <path d="M640 498h68"/>
+    <path d="M640 536h68"/>
   </g>
 
-  <!-- one thread of signal escapes the cloth -->
-  <path d="M620 430 H 700" stroke="#f0c36a" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+  <!-- ============ the cloth ============ -->
+  <circle cx="742" cy="428" r="88" fill="url(#pass)"/>
+  <g stroke="#e8a04a" stroke-linecap="round">
+    <g stroke-width="2.4" opacity="0.55">
+      <path d="M708 272h68M708 292h68M708 312h68M708 332h68M708 352h68M708 372h68M708 392h68M708 412h68M708 432h68M708 452h68M708 472h68M708 492h68M708 512h68M708 532h68M708 552h68M708 572h68M708 592h68M708 612h68M708 632h68"/>
+    </g>
+  </g>
+  <text x="742" y="678" class="mono" font-size="18" fill="#e8a04a" fill-opacity="0.85" text-anchor="middle">scrim</text>
 
-  <!-- ============ copy ============ -->
-  <text x="760" y="330" class="mono" font-size="132" font-weight="600" fill="#f4efe6" letter-spacing="4">scrim</text>
+  <!-- the one thread that matters passes through -->
+  <path d="M640 422 C 696 422, 760 396, 850 384" fill="none" stroke="#f0c36a" stroke-width="3"/>
+  <path d="M850 384 l-17 -7 1 14 z" fill="#f0c36a"/>
 
-  <text x="766" y="408" class="mono" font-size="40" fill="#e8a04a">signal goes through.</text>
-  <text x="766" y="462" class="mono" font-size="40" fill="#e8a04a" fill-opacity="0.75">glare does not.</text>
+  <!-- ============ right: what the model reads ============ -->
+  <text x="860" y="316" class="mono" font-size="20" fill="#f4efe6" fill-opacity="0.75">what the model reads</text>
+  <text x="1520" y="316" class="mono" font-size="17" fill="#f0c36a" fill-opacity="0.9" text-anchor="end">236 bytes</text>
 
-  <path d="M766 516h700" stroke="#e8a04a" stroke-opacity="0.25" stroke-width="1.5"/>
+  <rect x="852" y="334" width="668" height="256" rx="12" fill="#16120e" stroke="#e8a04a" stroke-opacity="0.25"/>
+  <g class="mono" font-size="20">
+    <text x="886" y="386" fill="#f0c36a" font-weight="600">FAIL  checkout</text>
+    <text x="886" y="426" fill="#f4efe6" fill-opacity="0.85">AssertionError: expected 500 == 502</text>
+    <text x="886" y="466" fill="#f4efe6" fill-opacity="0.55">&#160;&#160;&#160;&#160;at checkout.test.ts:118</text>
+  </g>
+  <g class="mono" font-size="17">
+    <text x="886" y="518" fill="#e8a04a" fill-opacity="0.8">[scrim] test_build_lint: 183412 &#8594; 236 bytes.</text>
+    <text x="886" y="548" fill="#e8a04a" fill-opacity="0.55">[scrim] full output: scrim get 9kQ2mZ7f</text>
+  </g>
 
-  <text x="766" y="578" class="mono" font-size="33">
-    <tspan fill="#f4efe6" fill-opacity="0.55">183,412 bytes in</tspan>
-    <tspan fill="#e8a04a"> &#8594; </tspan>
-    <tspan fill="#f0c36a">236 bytes out</tspan>
-  </text>
-
-  <text x="766" y="634" class="mono" font-size="25" fill="#f4efe6" fill-opacity="0.55">47% cut on 29k real calls &#183; zero dropped fails</text>
-  <text x="766" y="682" class="mono" font-size="25" fill="#f4efe6" fill-opacity="0.55">nothing lost &#8212; originals kept 7 days</text>
-
-  <text x="766" y="770" class="mono" font-size="25">
-    <tspan fill="#e8a04a" fill-opacity="0.85">claude code + codex</tspan>
-    <tspan fill="#f4efe6" fill-opacity="0.4">  &#183;  github.com/nikshepsvn/scrim</tspan>
+  <!-- ============ footer ============ -->
+  <path d="M80 742h1440" stroke="#e8a04a" stroke-opacity="0.18" stroke-width="1.5"/>
+  <text x="80" y="800" class="mono" font-size="24" fill="#f4efe6" fill-opacity="0.6">47% cut on 29k real calls &#183; zero dropped fails &#183; originals kept 7 days</text>
+  <text x="80" y="846" class="mono" font-size="24">
+    <tspan fill="#e8a04a" fill-opacity="0.9">claude code + codex</tspan>
+    <tspan fill="#f4efe6" fill-opacity="0.4"> &#183; fail-open hooks &#183; mit</tspan>
   </text>
 </svg>
