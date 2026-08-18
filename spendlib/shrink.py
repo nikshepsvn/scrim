@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from .classify import classify, command_of
+from .classify import classify
+from .compress import compress_text
+from .reducer import reduce_with_haiku
 from .textops import drain, head_tail, keep_signal_lines
 
 # kinds we refuse to rewrite (source / diffs / small structured)
@@ -119,7 +121,12 @@ def _optimize_text(kind: str, text: str, cfg: dict) -> str | None:
     if kind == "log":
         return drain(text) or keep_signal_lines(text, extra_keep=30)
     if kind == "search":
-        return head_tail(text, search_n, 8, "matches")
+        # never drop FAIL/Error hits (measured miss on Codex/SWE-smith)
+        sig = keep_signal_lines(text, extra_keep=0)
+        ht = head_tail(text, search_n, 8, "matches")
+        if sig and ht and "FAIL" in text:
+            return sig + "\n" + ht
+        return ht
     if kind == "file_list":
         return head_tail(text, list_n, 10, "paths")
     if kind == "web":
@@ -180,6 +187,20 @@ def shrink_tool(tool_name: str, tool_input: Any, tool_response: Any, cfg: dict) 
         thinned = None
     else:
         thinned = _optimize_text(kind, text, cfg)
+
+    if cfg.get("structural", True) and (thinned is None or len(thinned) > 4000):
+        src = thinned or text
+        packed = compress_text(src)
+        if packed and (thinned is None or len(packed) < len(thinned)):
+            thinned = packed
+            notes.append("structural")
+
+    if (cfg.get("reducer") or "off") == "haiku" and kind not in PASSTHROUGH:
+        src = thinned or text
+        reduced = reduce_with_haiku(src, cfg)
+        if reduced and len(reduced) < len(src):
+            thinned = reduced
+            notes.append("haiku")
 
     if thinned:
         thinned = _annotate(thinned, len(text), kind)

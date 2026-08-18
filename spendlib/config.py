@@ -14,6 +14,12 @@ DEFAULTS = {
     "web_cap_bytes": 16000,
     "mcp_text_cap_bytes": 12000,
     "warn_session_usd": 40.0,
+    "structural": True,
+    "reducer": "off",
+    "reducer_model": "claude-haiku-4-5-20251001",
+    "reducer_min_bytes": 8000,
+    "reducer_max_bytes": 120000,
+    "reducer_timeout_sec": 4,
 }
 
 

@@ -68,6 +68,24 @@ python3 scripts/spend.py --config
 
 Set `"shrink": false` to log only.
 
+### Compressor (optional)
+
+`gzip` / `zstd` do **not** help. The model has to read text, not bytes.
+
+There are two real compressors, both agent-readable:
+
+1. **Structural** (on by default) — large JSON/NDJSON becomes `{_n, head, tail}`; HTML becomes stripped text.
+2. **Haiku reducer** (off) — extractive pass on fat logs/bash/MCP. Needs `ANTHROPIC_API_KEY`. Fail-open, 4s timeout, hashed cache in `~/.spend/reducer-cache/`.
+
+```json
+{
+  "structural": true,
+  "reducer": "haiku"
+}
+```
+
+Leave `reducer` at `"off"` unless you want to pay Haiku on big dumps. Structural is enough for JSON APIs and pages.
+
 ## Codex
 
 Codex hooks can call the same `hooks/posttooluse.py` if you map PostToolUse in `~/.codex/hooks.json`. Replacement of tool output is first-class on Claude Code (`updatedToolOutput` / `updatedMCPToolOutput`); on Codex treat this as **tracking** unless you confirm output replacement in your CLI version.
