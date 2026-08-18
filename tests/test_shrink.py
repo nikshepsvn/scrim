@@ -100,6 +100,47 @@ def test_classify_bash_rg():
     assert classify("Bash", {"command": "rg -n TODO src"}) == "search"
 
 
+def test_classify_command_position():
+    # "find"/"ls" inside string args or pipelines must not misclassify
+    assert classify("Bash", {"command": "python3 -c \"print('find me')\""}) == "bash"
+    assert classify("Bash", {"command": "cat data.txt | grep ERROR"}) == "search"
+    assert classify("Bash", {"command": "pytest -q && ls"}) == "test_build_lint"
+    assert classify("Bash", {"command": "ruff check ."}) == "test_build_lint"
+
+
+def test_search_keeps_fail_in_omitted_middle():
+    lines = [f"src/mod_{i}.py:{i}: match line here" for i in range(200)]
+    lines[100] = "src/checkout.py:118: FAIL expected 500 == 502"
+    r = shrink_tool("Grep", {"pattern": "checkout"}, "\n".join(lines), CFG)
+    assert r["shrunk"] is True
+    out = r["updated_tool_output"]["stdout"]
+    assert "FAIL expected 500 == 502" in out
+    assert "omitted" in out
+
+
+def test_thin_tests_off_passthrough():
+    stdout = "\n".join(["PASS test_a"] * 300 + ["FAIL test_b"])
+    r = shrink_tool("Bash", {"command": "pytest -q"}, {"stdout": stdout}, {**CFG, "thin_tests": False})
+    assert r["shrunk"] is False
+
+
+def test_web_capped():
+    text = "word " * 400  # 2000 chars, cap is 100
+    r = shrink_tool("WebFetch", {"url": "https://example.com"}, text, CFG)
+    assert r["kind"] == "web"
+    assert r["shrunk"] is True
+    assert "capped" in r["updated_tool_output"]["stdout"]
+    assert r["bytes_out"] < r["bytes_in"]
+
+
+def test_never_larger_than_input():
+    # a marginal head/tail cut plus annotations would exceed the original
+    text = "\n".join(f"line number {i:04d} padding" for i in range(16))
+    r = shrink_tool("Grep", {"pattern": "line"}, text, CFG)
+    assert r["shrunk"] is False
+    assert r["bytes_out"] == r["bytes_in"]
+
+
 if __name__ == "__main__":
     for fn, val in list(globals().items()):
         if fn.startswith("test_") and callable(val):

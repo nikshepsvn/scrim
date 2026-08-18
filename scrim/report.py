@@ -29,6 +29,15 @@ def render(usage: dict, tools: dict) -> str:
         )
         for name, v in list((tools.get("by_tool") or {}).items())[:8]:
             lines.append(f"    {name:<40} n={v['n']:<5} {v['in']/1e6:6.2f} MB")
+        kinds = [
+            f"{k} {v['in']/1e6:.2f} MB"
+            for k, v in list((tools.get("by_kind") or {}).items())[:4]
+            if v["in"] >= 10_000
+        ]
+        if kinds:
+            lines.append("  kinds  " + " · ".join(kinds))
+        if tools.get("stashes"):
+            lines.append(f"  stashed originals  {tools['stashes']:,}  (scrim get <id>)")
         if tools.get("swarms"):
             lines.append(f"  subagents spawned  {tools['swarms']:,}")
     else:

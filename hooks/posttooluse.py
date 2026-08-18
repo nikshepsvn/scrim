@@ -6,15 +6,12 @@ from __future__ import annotations
 import json
 import os
 import sys
+from pathlib import Path
 
-PLUGIN_ROOT = os.environ.get("CLAUDE_PLUGIN_ROOT")
+# env when launched via run.sh; __file__ when invoked directly (e.g. Codex)
+PLUGIN_ROOT = os.environ.get("CLAUDE_PLUGIN_ROOT") or str(Path(__file__).resolve().parents[1])
 if PLUGIN_ROOT and PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
-
-from scrim.config import load_config
-from scrim.metrics import append_metric
-from scrim.shrink import response_text, shrink_tool
-from scrim.stash import put as stash_put
 
 
 def _append_note(decision: dict, extra: str) -> None:
@@ -38,6 +35,12 @@ def main() -> int:
         return 0
 
     try:
+        # imports inside the guard: a broken install must not exit non-zero
+        from scrim.config import load_config
+        from scrim.metrics import append_metric
+        from scrim.shrink import response_text, shrink_tool
+        from scrim.stash import put as stash_put
+
         cfg = load_config()
         tool_name = data.get("tool_name") or ""
         tool_input = data.get("tool_input")
@@ -45,32 +48,38 @@ def main() -> int:
         decision = shrink_tool(tool_name, tool_input, tool_response, cfg)
         stash_id = None
         if decision.get("shrunk") and cfg.get("stash", True):
-            original = response_text(tool_response)
-            if original:
-                stash_id = stash_put(
-                    original,
-                    tool_use_id=data.get("tool_use_id"),
-                    kind=decision.get("kind") or "",
-                    tool_name=tool_name,
-                )
+            try:
+                original = response_text(tool_response)
+                if original:
+                    stash_id = stash_put(
+                        original,
+                        tool_use_id=data.get("tool_use_id"),
+                        kind=decision.get("kind") or "",
+                        tool_name=tool_name,
+                    )
                 if stash_id:
                     extra = f"\n[scrim] full output: scrim get {stash_id}"
                     _append_note(decision, extra)
                     decision["note"] = (decision.get("note") or "") + extra
-        append_metric(
-            {
-                "session_id": data.get("session_id"),
-                "cwd": data.get("cwd"),
-                "tool_name": tool_name,
-                "tool_use_id": data.get("tool_use_id"),
-                "bytes_in": decision["bytes_in"],
-                "bytes_out": decision["bytes_out"],
-                "shrunk": decision["shrunk"],
-                "kind": decision.get("kind") or "",
-                "note": (decision.get("note") or "")[:200],
-                "stash_id": stash_id,
-            }
-        )
+            except Exception:
+                stash_id = None  # stash trouble must not cost us the thinning
+        try:
+            append_metric(
+                {
+                    "session_id": data.get("session_id"),
+                    "cwd": data.get("cwd"),
+                    "tool_name": tool_name,
+                    "tool_use_id": data.get("tool_use_id"),
+                    "bytes_in": decision["bytes_in"],
+                    "bytes_out": decision["bytes_out"],
+                    "shrunk": decision["shrunk"],
+                    "kind": decision.get("kind") or "",
+                    "note": (decision.get("note") or "")[:200],
+                    "stash_id": stash_id,
+                }
+            )
+        except Exception:
+            pass  # a full disk must not cost us the thinned output
         hook: dict = {"hookEventName": "PostToolUse"}
         if decision.get("updated_tool_output") is not None:
             hook["updatedToolOutput"] = decision["updated_tool_output"]

@@ -12,9 +12,9 @@ Do not invent numbers. **Delegate to the `scrim-analyst` subagent** (Haiku) inst
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scrim.py" --today
 ```
 
-2. If that fails, Read `~/.scrim/last.txt`.
+2. If that fails, Read `~/.scrim/last.txt`. If numbers look missing or zero, run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scrim.py" doctor`.
 
-3. If they need an omitted original, spawn `scrim-retrieve` with the stash id. Do not Read the blob in the parent session.
+3. If they need an omitted original, spawn `scrim-retrieve` with the stash id. Do not Read the blob in the parent session. `scrim.py stashes` lists what is retrievable.
 
 4. Lifetime transcript usage: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scrim.py" --backfill`
 

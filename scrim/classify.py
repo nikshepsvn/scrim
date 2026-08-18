@@ -4,15 +4,23 @@ import re
 from typing import Any
 
 TEST_RE = re.compile(
-    r"(npm test|pnpm test|yarn test|pytest|vitest|jest|cargo test|go test|npx tsc|eslint|\blint\b|playwright test)",
+    r"(npm test|pnpm test|yarn test|bun test|deno test|make test|pytest|tox\b|vitest|jest"
+    r"|cargo test|cargo clippy|go test|go vet|npx tsc|\btsc\b|eslint|\blint\b|ruff\b"
+    r"|mypy\b|pyright\b|playwright test|rspec\b|phpunit\b|mvn test|gradle\w* test)",
     re.I,
 )
 LOG_RE = re.compile(
-    r"(kubectl logs|docker logs|journalctl|\btail\b|.*\.log\b)",
+    r"(kubectl logs|docker logs|compose logs|journalctl|\btail\b|\.log\b)",
     re.I,
 )
-SEARCH_RE = re.compile(r"\b(rg|grep|git grep|ag|ack)\b", re.I)
-LIST_RE = re.compile(r"\b(ls|find|tree|fd|glob)\b", re.I)
+# match at command position (segment start), not anywhere in a string argument
+SEGMENT_RE = re.compile(r"\|\||&&|[|;&]")
+SEARCH_HEAD_RE = re.compile(r"^(rg|grep|egrep|fgrep|ag|ack)\b|^git\s+grep\b", re.I)
+LIST_HEAD_RE = re.compile(r"^(ls|find|tree|fd|eza|exa)\b|^git\s+ls-files\b", re.I)
+
+
+def segments(cmd: str) -> list[str]:
+    return [s.strip() for s in SEGMENT_RE.split(cmd) if s.strip()]
 
 
 def command_of(tool_input: Any) -> str:
@@ -34,17 +42,24 @@ def classify(tool_name: str, tool_input: Any) -> str:
         return "read"
     if n in {"edit", "write", "multiedit", "notebookedit"}:
         return "edit"
-    if n in {"grep", "rg"} or (n in {"bash", "shell", "zsh"} and SEARCH_RE.search(cmd)):
+    if n in {"grep", "rg"}:
         return "search"
-    if n in {"glob", "ls"} or (n in {"bash", "shell", "zsh"} and LIST_RE.search(cmd) and not SEARCH_RE.search(cmd)):
+    if n in {"glob", "ls"}:
         return "file_list"
     if n in {"websearch", "webfetch", "web_search", "web_fetch"}:
         return "web"
     if n.startswith("mcp__") or "mcp" in n:
         return "mcp"
     if n in {"bash", "shell", "zsh"}:
+        # test runners first: `pytest && ls` should get FAIL-line thinning,
+        # not head/tail that can drop the failure
         if TEST_RE.search(cmd):
             return "test_build_lint"
+        segs = segments(cmd)
+        if any(SEARCH_HEAD_RE.match(s) for s in segs):
+            return "search"
+        if any(LIST_HEAD_RE.match(s) for s in segs):
+            return "file_list"
         if LOG_RE.search(cmd):
             return "log"
         return "bash"

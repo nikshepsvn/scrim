@@ -10,11 +10,13 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import urllib.error
+import time
 import urllib.request
 from pathlib import Path
 
 from .config import data_dir
+
+CACHE_TTL_DAYS = 30
 
 PROMPT = """Extract evidence from this coding-agent tool output.
 Keep: failures, errors, stack traces, file:line hits, unique log templates with counts, exit codes.
@@ -94,8 +96,20 @@ def _read_cache(path: Path) -> str | None:
 def _write_cache(path: Path, text: str) -> None:
     try:
         path.write_text(text, encoding="utf-8")
+        _prune_cache(path.parent)
     except OSError:
         pass
+
+
+def _prune_cache(d: Path) -> None:
+    # only runs on live API calls, so the scan cost is off the hot path
+    cutoff = time.time() - CACHE_TTL_DAYS * 86400
+    for p in d.glob("*.txt"):
+        try:
+            if p.stat().st_mtime < cutoff:
+                p.unlink()
+        except OSError:
+            continue
 
 
 def _openrouter(snippet: str, model: str, cfg: dict) -> str | None:
@@ -131,7 +145,7 @@ def _openrouter(snippet: str, model: str, cfg: dict) -> str | None:
     try:
         with urllib.request.urlopen(req, timeout=float(cfg.get("reducer_timeout_sec") or 20)) as resp:
             payload = json.loads(resp.read().decode())
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError):
+    except Exception:  # any transport/parse failure fails open
         return None
     choices = payload.get("choices") or []
     if not choices:
@@ -175,7 +189,7 @@ def _anthropic(snippet: str, model: str, cfg: dict) -> str | None:
     try:
         with urllib.request.urlopen(req, timeout=float(cfg.get("reducer_timeout_sec") or 20)) as resp:
             payload = json.loads(resp.read().decode())
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError):
+    except Exception:  # any transport/parse failure fails open
         return None
     parts = []
     for block in payload.get("content") or []:

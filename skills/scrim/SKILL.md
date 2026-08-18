@@ -24,4 +24,12 @@ Lifetime shadow $ from transcripts:
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scrim.py" --backfill
 ```
 
-Remind them Max/Ultra is a subscription. Backfill dollars are list-price, not Stripe.
+Health check / per-kind breakdown / stash listing:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scrim.py" doctor
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scrim.py" kinds --today
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scrim.py" stashes
+```
+
+Remind them Max/Ultra is a subscription. Backfill dollars are list-price, not Stripe. "Today" is their local calendar day.

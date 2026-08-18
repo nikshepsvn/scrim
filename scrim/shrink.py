@@ -114,6 +114,16 @@ def _annotate(body: str, n_orig: int, kind: str, stash_id: str | None = None) ->
     return body + f"\n\n[scrim] {kind}: {n_orig} → {len(body)} bytes.{extra}"
 
 
+def _cap_text(text: str, cap: int, label: str) -> str | None:
+    if len(text) <= cap:
+        return None
+    cut = text[:cap]
+    nl = cut.rfind("\n")
+    if nl > cap * 0.8:
+        cut = cut[:nl]
+    return cut + f"\n[scrim] {label} capped at {cap} bytes"
+
+
 def _optimize_text(kind: str, text: str, cfg: dict) -> str | None:
     search_n = int(cfg.get("search_keep_lines") or 40)
     list_n = int(cfg.get("list_keep_lines") or 80)
@@ -126,22 +136,24 @@ def _optimize_text(kind: str, text: str, cfg: dict) -> str | None:
     if kind == "log":
         return drain(text) or keep_signal_lines(text, extra_keep=30)
     if kind == "search":
-        # never drop FAIL/Error hits (measured miss on Codex/SWE-smith)
-        sig = keep_signal_lines(text, extra_keep=0)
         ht = head_tail(text, search_n, 8, "matches")
-        if sig and ht and "FAIL" in text:
-            return sig + "\n" + ht
+        if ht is None:
+            return None
+        # never drop FAIL/Error hits into the omitted middle
+        # (measured miss on Codex/SWE-smith traces)
+        sig = keep_signal_lines(text, extra_keep=0)
+        if sig:
+            shown = set(ht.splitlines())
+            extra = [ln for ln in sig.splitlines() if ln not in shown][:40]
+            if extra:
+                ht += "\n[scrim] signal in omitted range:\n" + "\n".join(extra)
         return ht
     if kind == "file_list":
         return head_tail(text, list_n, 10, "paths")
     if kind == "web":
-        if len(text) > web_cap:
-            return text[:web_cap] + f"\n[scrim] web capped at {web_cap} bytes"
-        return None
+        return _cap_text(text, web_cap, "web")
     if kind == "mcp":
-        if len(text) > mcp_cap:
-            return text[:mcp_cap] + f"\n[scrim] mcp text capped at {mcp_cap} bytes"
-        return None
+        return _cap_text(text, mcp_cap, "mcp text")
     if kind == "bash":
         sig = keep_signal_lines(text)
         if sig:
@@ -166,6 +178,8 @@ def shrink_tool(tool_name: str, tool_input: Any, tool_response: Any, cfg: dict) 
         return result
     if kind in PASSTHROUGH and not cfg.get("thin_reads"):
         return result
+    if kind == "test_build_lint" and not cfg.get("thin_tests", True):
+        return result
     # already spilled by the harness
     if isinstance(tool_response, str) and tool_response.startswith("<persisted-output>"):
         return result
@@ -187,11 +201,7 @@ def shrink_tool(tool_name: str, tool_input: Any, tool_response: Any, cfg: dict) 
             result["note"] = "; ".join(notes)
         return result
 
-    thinned = None
-    if kind == "test_build_lint" and not cfg.get("thin_tests", True):
-        thinned = None
-    else:
-        thinned = _optimize_text(kind, text, cfg)
+    thinned = _optimize_text(kind, text, cfg)
 
     if cfg.get("structural", True) and (thinned is None or len(thinned) > 4000):
         src = thinned or text
@@ -206,6 +216,10 @@ def shrink_tool(tool_name: str, tool_input: Any, tool_response: Any, cfg: dict) 
         if reduced and len(reduced) < len(src):
             thinned = reduced
             notes.append("reducer")
+
+    # a marginal cut plus the annotation could exceed the original
+    if thinned is not None and len(thinned) + 80 >= len(text):
+        thinned = None
 
     if thinned:
         thinned = _annotate(thinned, len(text), kind)

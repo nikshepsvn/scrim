@@ -14,12 +14,18 @@ SLOT_RE = re.compile(
 )
 
 
-def keep_signal_lines(text: str, extra_keep: int = 15) -> str | None:
+def keep_signal_lines(text: str, extra_keep: int = 15, max_signal: int = 400) -> str | None:
     if len(text) < 2000:
         return None
     lines = text.splitlines()
     keep = [ln for ln in lines if FAIL_RE.search(ln) or LEVEL_RE.search(ln)]
-    tail = lines[-extra_keep:]
+    if len(keep) > max_signal:
+        omitted = len(keep) - max_signal
+        keep = keep[: max_signal // 2] + [
+            f"[scrim] … {omitted} more signal lines omitted …"
+        ] + keep[-max_signal // 2:]
+    # lines[-0:] would be the whole list, silently returning the full text
+    tail = lines[-extra_keep:] if extra_keep > 0 else []
     seen: set[str] = set()
     out: list[str] = []
     for ln in keep + tail:

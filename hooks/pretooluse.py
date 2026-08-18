@@ -6,13 +6,12 @@ from __future__ import annotations
 import json
 import os
 import sys
+from pathlib import Path
 
-PLUGIN_ROOT = os.environ.get("CLAUDE_PLUGIN_ROOT")
+# env when launched via run.sh; __file__ when invoked directly (e.g. Codex)
+PLUGIN_ROOT = os.environ.get("CLAUDE_PLUGIN_ROOT") or str(Path(__file__).resolve().parents[1])
 if PLUGIN_ROOT and PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
-
-from scrim.config import load_config
-from scrim.constrain import constrain
 
 
 def main() -> int:
@@ -22,6 +21,10 @@ def main() -> int:
         print("{}")
         return 0
     try:
+        # imports inside the guard: a broken install must not exit non-zero
+        from scrim.config import load_config
+        from scrim.constrain import constrain
+
         cfg = load_config()
         decision = constrain(data.get("tool_name") or "", data.get("tool_input"), cfg)
         hook = {"hookEventName": "PreToolUse"}

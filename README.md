@@ -15,6 +15,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/claude_code-plugin-e8a04a?style=flat-square&labelColor=0c0b0a" alt="Claude Code plugin">
+  <img src="https://img.shields.io/badge/v0.7.0-16120e?style=flat-square&label=scrim&labelColor=0c0b0a" alt="v0.7.0">
   <img src="https://img.shields.io/badge/hooks-fail--open-f4efe6?style=flat-square&labelColor=0c0b0a" alt="Fail-open">
   <img src="https://img.shields.io/badge/license-MIT-16120e?style=flat-square&labelColor=0c0b0a" alt="MIT">
   <img src="https://img.shields.io/github/actions/workflow/status/nikshepsvn/scrim/test.yml?style=flat-square&label=tests&labelColor=0c0b0a" alt="tests">
@@ -74,7 +75,8 @@ Private marketplace (needs GitHub auth):
 Restart Claude Code. Run a tool. Then `/scrim`.
 
 ```bash
-make test
+make test                        # 71 hermetic tests, stdlib only
+python3 scripts/scrim.py doctor  # if nothing shows up
 ```
 
 ## `/scrim`
@@ -91,13 +93,16 @@ Tools  (this plugin)
 ```
 
 ```bash
-python3 scripts/scrim.py --today
-python3 scripts/scrim.py --backfill
-python3 scripts/scrim.py get <id>          # omitted original
-python3 scripts/scrim.py get <id> 118-130
+python3 scripts/scrim.py --today           # local calendar day (add --json for machines)
+python3 scripts/scrim.py --backfill        # lifetime, retries deduped
+python3 scripts/scrim.py get <id> 118-130  # slice of an omitted original
+python3 scripts/scrim.py stashes           # what's retrievable
+python3 scripts/scrim.py kinds             # where the MB went, by kind
+python3 scripts/scrim.py doctor            # is the chain healthy
+python3 scripts/scrim.py prune             # trim old metrics + stash
 ```
 
-Those dollars are Opus/Sonnet **list prices**. Max/Ultra is a subscription — you are looking at quota shape, not a card charge.
+Those dollars are **list prices** (Fable at Fable rates, Opus at Opus rates). Max/Ultra is a subscription — you are looking at quota shape, not a card charge.
 
 ## What gets through
 
@@ -105,12 +110,14 @@ Those dollars are Opus/Sonnet **list prices**. Max/Ultra is a subscription — y
 |---|---|
 | Tests / lint | FAIL, Error, traceback, tail |
 | Logs | Drain-lite templates + counts |
-| Grep / `rg` | Head + tail; FAIL/Error hits always kept |
+| Grep / `rg` | Head + tail; FAIL/Error hits in the omitted middle appended anyway |
 | `ls` / Glob | Head + omitted count |
 | Chrome / Playwright | Images dropped, leftover text capped |
 | Web | 16 KB cap |
 | Other fat bash | Signal lines, else head+tail |
 | `Read` / `Edit` | **Untouched** |
+
+If the rewrite would not actually be smaller, the original goes through. PreToolUse caps only pure listings — pipes, redirects, and mutating `find` (`-exec`, `-delete`) are never rewritten, and `find` inside a string argument doesn't count.
 
 gzip does not reduce tokens. The model has to read text.
 

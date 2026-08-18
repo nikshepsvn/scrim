@@ -6,16 +6,15 @@ from __future__ import annotations
 import json
 import os
 import sys
+from pathlib import Path
 
-PLUGIN_ROOT = os.environ.get("CLAUDE_PLUGIN_ROOT")
+# env when launched via run.sh; __file__ when invoked directly (e.g. Codex)
+PLUGIN_ROOT = os.environ.get("CLAUDE_PLUGIN_ROOT") or str(Path(__file__).resolve().parents[1])
 if PLUGIN_ROOT and PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
-from scrim.config import load_config
-from scrim.metrics import append_metric, iter_metrics
 
-
-def _open_count(session_id: str) -> int:
+def _open_count(iter_metrics, session_id: str) -> int:
     n = 0
     for row in iter_metrics() or []:
         if row.get("session_id") != session_id:
@@ -35,6 +34,10 @@ def main() -> int:
         print("{}")
         return 0
     try:
+        # imports inside the guard: a broken install must not exit non-zero
+        from scrim.config import load_config
+        from scrim.metrics import append_metric, iter_metrics
+
         cfg = load_config()
         event = data.get("hook_event_name") or ""
         sid = data.get("session_id")
@@ -53,7 +56,7 @@ def main() -> int:
         hook = {"hookEventName": event or "SubagentStart"}
         if kind == "subagent_start" and sid:
             cap = int(cfg.get("max_open_subagents") or 8)
-            open_n = _open_count(sid)
+            open_n = _open_count(iter_metrics, sid)
             if open_n >= cap:
                 hook["additionalContext"] = (
                     f"[scrim] {open_n} subagents already open in this session "

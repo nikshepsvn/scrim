@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 DEFAULTS = {
@@ -32,8 +33,15 @@ DEFAULTS = {
     "max_open_subagents": 8,
 }
 
+_MISSING = object()
+
 
 def data_dir() -> Path:
+    override = os.environ.get("SCRIM_DATA_DIR")
+    if override:
+        dest = Path(override).expanduser()
+        dest.mkdir(parents=True, exist_ok=True)
+        return dest
     dest = Path.home() / ".scrim"
     if dest.exists():
         return dest
@@ -48,14 +56,57 @@ def data_dir() -> Path:
     return dest
 
 
+def config_path() -> Path:
+    return data_dir() / "config.json"
+
+
 def load_config() -> dict:
-    path = data_dir() / "config.json"
+    return load_config_report()[0]
+
+
+def load_config_report() -> tuple[dict, list[str]]:
+    """Effective config plus human-readable warnings. Never raises —
+    an unreadable disk still gets defaults so thinning can proceed."""
     cfg = dict(DEFAULTS)
-    if path.exists():
-        try:
-            user = json.loads(path.read_text())
-            if isinstance(user, dict):
-                cfg.update({k: user[k] for k in DEFAULTS if k in user})
-        except (OSError, json.JSONDecodeError):
-            pass
-    return cfg
+    warnings: list[str] = []
+    try:
+        path = config_path()
+        if not path.exists():
+            return cfg, warnings
+        user = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as e:
+        warnings.append(f"config unreadable ({type(e).__name__}); using defaults")
+        return cfg, warnings
+    if not isinstance(user, dict):
+        warnings.append("config.json is not a JSON object; using defaults")
+        return cfg, warnings
+    for key, value in user.items():
+        if key not in DEFAULTS:
+            warnings.append(f"unknown key {key!r} ignored")
+            continue
+        coerced = _coerce(value, DEFAULTS[key])
+        if coerced is _MISSING:
+            warnings.append(
+                f"{key!r}: expected {type(DEFAULTS[key]).__name__}, "
+                f"got {type(value).__name__}; using default"
+            )
+            continue
+        cfg[key] = coerced
+    return cfg, warnings
+
+
+def _coerce(value, default):
+    # bool must come first: isinstance(True, int) is True
+    if isinstance(default, bool):
+        return value if isinstance(value, bool) else _MISSING
+    if isinstance(default, float):
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return float(value)
+        return _MISSING
+    if isinstance(default, int):
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return int(value)
+        return _MISSING
+    if isinstance(default, str):
+        return value if isinstance(value, str) else _MISSING
+    return value

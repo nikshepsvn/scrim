@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from .config import data_dir
+from .timeutil import local_day
 
 
 def metrics_path() -> Path:
@@ -38,16 +39,49 @@ def iter_metrics():
                 continue
 
 
-def summarize(since_prefix: str | None = None) -> dict:
+def prune_metrics(keep_days: int = 90) -> int:
+    """Drop rows older than keep_days (local time). Returns rows removed."""
+    path = metrics_path()
+    if not path.exists():
+        return 0
+    kept: list[str] = []
+    dropped = 0
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=keep_days)).astimezone().date().isoformat()
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                day = local_day(json.loads(line).get("ts"))
+            except json.JSONDecodeError:
+                dropped += 1
+                continue
+            if day and day < cutoff:
+                dropped += 1
+                continue
+            kept.append(line)
+        if dropped:
+            path.write_text("\n".join(kept) + ("\n" if kept else ""), encoding="utf-8")
+    except OSError:
+        return 0
+    return dropped
+
+
+def summarize(day: str | None = None, session_id: str | None = None) -> dict:
+    """Roll up hook metrics. day is a local YYYY-MM-DD; timestamps are UTC."""
     n = 0
     bytes_in = 0
     bytes_out = 0
     shrunk = 0
+    stashes = 0
     swarms = 0
     by_tool = defaultdict(lambda: {"n": 0, "in": 0, "out": 0})
+    by_kind = defaultdict(lambda: {"n": 0, "in": 0, "out": 0})
     for row in iter_metrics() or []:
-        ts = row.get("ts") or ""
-        if since_prefix and not ts.startswith(since_prefix):
+        if day and local_day(row.get("ts")) != day:
+            continue
+        if session_id and row.get("session_id") != session_id:
             continue
         k = row.get("kind") or ""
         if k in {"subagent_start", "subagent_stop"}:
@@ -61,18 +95,28 @@ def summarize(since_prefix: str | None = None) -> dict:
         bytes_out += bo
         if row.get("shrunk"):
             shrunk += 1
+        if row.get("stash_id"):
+            stashes += 1
         t = row.get("tool_name") or "unknown"
         by_tool[t]["n"] += 1
         by_tool[t]["in"] += bi
         by_tool[t]["out"] += bo
+        kk = k or "other"
+        by_kind[kk]["n"] += 1
+        by_kind[kk]["in"] += bi
+        by_kind[kk]["out"] += bo
     return {
         "n": n,
         "bytes_in": bytes_in,
         "bytes_out": bytes_out,
         "saved": max(0, bytes_in - bytes_out),
         "shrunk": shrunk,
+        "stashes": stashes,
         "swarms": swarms,
         "by_tool": dict(
             sorted(by_tool.items(), key=lambda kv: -kv[1]["in"])[:12]
+        ),
+        "by_kind": dict(
+            sorted(by_kind.items(), key=lambda kv: -kv[1]["in"])[:12]
         ),
     }

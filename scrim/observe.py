@@ -3,18 +3,25 @@
 from __future__ import annotations
 
 import json
+import time
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 
 from .prices import cost_usd
+from .timeutil import local_day
 
 
-def parse_transcript(path: Path, since_prefix: str | None = None) -> dict:
+def parse_transcript(path: Path, day: str | None = None, seen: set | None = None) -> dict:
+    """Sum usage rows. day is a local YYYY-MM-DD filter; seen dedups
+    API retries (same message id + requestId) across files."""
     models: dict[str, dict] = defaultdict(lambda: {
         "turns": 0, "inp": 0, "out": 0, "cr": 0, "cw": 0, "cw1h": 0, "cost": 0.0
     })
     first_ts = last_ts = None
     session_id = cwd = None
+    if seen is None:
+        seen = set()
     if not path.exists():
         return _empty()
     try:
@@ -38,7 +45,7 @@ def parse_transcript(path: Path, since_prefix: str | None = None) -> dict:
             if ts:
                 first_ts = first_ts or ts
                 last_ts = ts
-            if since_prefix and ts and not str(ts).startswith(since_prefix):
+            if day and ts and local_day(ts) != day:
                 continue
             if o.get("type") != "assistant":
                 continue
@@ -51,6 +58,12 @@ def parse_transcript(path: Path, since_prefix: str | None = None) -> dict:
             u = msg.get("usage") or {}
             if not u:
                 continue
+            mid = msg.get("id")
+            rid = o.get("requestId") or o.get("request_id")
+            if mid and rid:
+                if (mid, rid) in seen:
+                    continue
+                seen.add((mid, rid))
             cc = u.get("cache_creation") or {}
             cw1h = cc.get("ephemeral_1h_input_tokens") if isinstance(cc, dict) else 0
             inp = u.get("input_tokens") or 0
@@ -69,15 +82,34 @@ def parse_transcript(path: Path, since_prefix: str | None = None) -> dict:
     return _rollup(models, session_id, cwd, first_ts, last_ts)
 
 
-def parse_projects(since_prefix: str | None = None) -> dict:
+def _day_start_epoch(day: str) -> float | None:
+    """Epoch of local midnight for a YYYY-MM-DD, minus an hour of slack."""
+    try:
+        start = datetime.fromisoformat(day)
+    except ValueError:
+        return None
+    return time.mktime(start.timetuple()) - 3600
+
+
+def parse_projects(day: str | None = None) -> dict:
     root = Path.home() / ".claude" / "projects"
     models: dict[str, dict] = defaultdict(lambda: {
         "turns": 0, "inp": 0, "out": 0, "cr": 0, "cw": 0, "cw1h": 0, "cost": 0.0
     })
     if not root.exists():
         return _empty()
+    # a transcript not touched since before the day cannot contain its rows;
+    # skipping by mtime turns a ~2000-file scan into a handful
+    min_mtime = _day_start_epoch(day) if day else None
+    seen: set = set()
     for path in root.rglob("*.jsonl"):
-        part = parse_transcript(path, since_prefix=since_prefix)
+        if min_mtime is not None:
+            try:
+                if path.stat().st_mtime < min_mtime:
+                    continue
+            except OSError:
+                continue
+        part = parse_transcript(path, day=day, seen=seen)
         if not (part.get("total") or {}).get("turns"):
             continue
         for model, m in (part.get("models") or {}).items():

@@ -51,7 +51,7 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run.sh stop.py",
-            "timeout": 8
+            "timeout": 10
           }
         ]
       }

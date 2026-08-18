@@ -1,6 +1,6 @@
 {
   "name": "scrim",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "A scrim between the tool and the model. Cost observability and tool-output optimization. Local, fail-open.",
   "author": {
     "name": "nikshepsvn"
