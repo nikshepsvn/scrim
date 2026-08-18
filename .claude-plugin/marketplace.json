@@ -10,7 +10,7 @@
       "name": "sift",
       "source": "./",
       "displayName": "Sift",
-      "description": "Thin tests, logs, greps, file lists, and Chrome screenshots before they hit the context window. Optional OpenRouter extract.",
+      "description": "See where tokens go. Cap fat tools before they run. Thin what still gets through.",
       "license": "MIT",
       "keywords": ["hooks", "context", "quota", "tokens"]
     }

@@ -1,10 +1,14 @@
 # Sift
 
-**Sift tool output before the model reads it.**
+**Cost observability and tool-output optimization for Claude Code.**
 
-Claude Code will feed the model 4,000 lines of passing tests and a folder of screenshots. Sift sits on `PostToolUse`, classifies the result, and hands the model the evidence. Hooks fail open. `Read` and `Edit` are never rewritten.
+Sift does three things:
 
-It does not switch models and it does not change your Anthropic bill. It keeps chaff out of the window.
+1. **See** — cache-read vs write vs output, by model, plus what tools dumped  
+2. **Prevent** — cap `ls -R`, `find`, and `rg` *before* they run  
+3. **Thin** — drop screenshots, passing tests, log spam; stash the original so you can pull it back  
+
+Hooks fail open. `Read` and `Edit` are never rewritten. It does not switch models and it does not change a Max subscription’s Stripe charge.
 
 ## Before / after
 
@@ -52,25 +56,24 @@ make test
 ## `/sift`
 
 ```
-today 2026-08-18
-  tool calls     12
-  bytes in       4.20 MB
-  bytes out      0.31 MB
-  thinned        3 calls, 3.89 MB dropped
-  top tools
+Sift
+Usage  (list prices, not Stripe)
+  $1,204 API-eq   turns 412   cache-read 96%   cache-write 3.1M   out 80k
+    claude-opus-5                    $980   300 turns
+    claude-fable-5                   $210   112 turns
+Tools  (this plugin)
+  142 calls   4.20 MB in → 0.31 MB out   3.89 MB sifted
     mcp__claude-in-chrome__browser_batch   n=2     3.80 MB
-    Bash                                   n=8     0.28 MB
-data: ~/.sift
 ```
-
-CLI is the same thing:
 
 ```bash
 python3 scripts/sift.py --today
-python3 scripts/sift.py --backfill   # list-price $ from ~/.claude/projects
+python3 scripts/sift.py --backfill
+python3 scripts/sift.py get <id>          # omitted original
+python3 scripts/sift.py get <id> 118-130
 ```
 
-`--backfill` is shadow cost (Opus/Sonnet list prices). Max/Ultra subscribers do not pay that cash.
+Dollar figures are Opus/Sonnet list prices. Max/Ultra subscribers do not pay that cash.
 
 ## What gets thinned
 

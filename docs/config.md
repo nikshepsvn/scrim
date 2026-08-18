@@ -27,5 +27,12 @@ Unknown keys are ignored. Missing keys use defaults.
 | `reducer_max_tokens` | `4096` | Completion budget (Mercury needs this on fat dumps) |
 | `reducer_timeout_sec` | `20` | HTTP timeout |
 | `reducer_api_key` | `""` | Optional if env is unset. Do not commit. |
+| `pretool` | `true` | Cap unbounded `ls`/`rg`/`Grep` before they run |
+| `ls_max_lines` | `200` | `head -n` for `ls -R` / `find` / `tree` |
+| `grep_max_count` | `80` | `Grep.head_limit` and `rg --max-count` |
+| `stash` | `true` | Keep omitted originals in `~/.sift/blobs/` |
+| `stash_ttl_days` | `7` | Delete older blobs |
+| `stash_max_mb` | `512` | Cap stash dir |
+| `session_tool_mb_warn` | `2` | Stop-hook warning threshold |
 
 Env, in order: `OPENROUTER_API_KEY` or `ANTHROPIC_API_KEY`, then `SPEND_REDUCER_KEY` / `SIFT_REDUCER_KEY`, then `reducer_api_key`.

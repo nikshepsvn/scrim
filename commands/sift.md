@@ -1,20 +1,21 @@
 ---
-description: Show what Sift thinned and the API-equivalent token mix
+description: Cost and tool-output report. Retrieve a stashed original with sift get.
 ---
 
 # /sift
 
-Run the local CLI. Do not invent numbers. Prefer `$CLAUDE_PLUGIN_ROOT`.
+Do not invent numbers.
+
+1. Run the CLI (plugin root is `$CLAUDE_PLUGIN_ROOT` when set):
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sift.py" --today
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sift.py"
 ```
 
-If they ask about lifetime API-equivalent cost from Claude Code transcripts:
+2. If that fails, Read `~/.sift/last.txt`.
 
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sift.py" --backfill
-```
+3. If the user asks for an omitted original: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sift.py" get <id> [start-end]`
 
-Max/Ultra is a subscription. Backfill dollars are list-price shadow cost, not Stripe. Hook metrics only exist after this plugin is installed.
+4. Lifetime transcript usage: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sift.py" --backfill`
+
+Max/Ultra is a subscription. Dollar figures are list-price shadow cost.

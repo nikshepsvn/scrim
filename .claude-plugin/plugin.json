@@ -1,7 +1,7 @@
 {
   "name": "sift",
-  "version": "0.3.0",
-  "description": "Sift tool output before the model reads it. Local, fail-open, no payloads uploaded unless you opt into a reducer.",
+  "version": "0.4.0",
+  "description": "Cost observability and tool-output optimization for Claude Code. Local, fail-open.",
   "author": {
     "name": "nikshepsvn"
   },

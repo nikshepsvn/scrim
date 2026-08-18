@@ -1,24 +1,26 @@
 # How it works
 
 ```
-tool runs
-    │
-    ▼
-PostToolUse hook  (≤25s, always exit 0)
-    │
-    ├─ classify(name, command)
-    ├─ drop MCP images
-    ├─ kind filter (tests / logs / grep / ls / bash / web)
-    ├─ structural JSON/HTML rewrite
-    ├─ optional OpenRouter reducer (if still fat)
-    ├─ append ~/.sift/metrics.jsonl
-    └─ return updatedToolOutput / updatedMCPToolOutput
-           or {} on any error  →  original bytes
+PreToolUse
+    cap ls -R / find / rg before they run
+    hint: skip another Chrome screenshot
+         │
+         ▼
+    tool runs
+         │
+         ▼
+PostToolUse  (fail-open)
+    classify → thin → stash original → metrics
+         │
+         ▼
+Stop
+    write ~/.sift/last.txt  (usage + tools)
+    warn if this session dumped ≥2 MB
 ```
 
-The hook cannot change the session model. Routing Opus → Haiku is a different process.
+`/sift` reads transcripts for cache/write/output $ and hook metrics for what was thinned.
 
-`Stop` warns if this session’s tool results exceeded 2 MB.
+The hook cannot change the session model. Routing Opus → Haiku is a different process.
 
 ## Fail-open
 

@@ -22,6 +22,13 @@ DEFAULTS = {
     "reducer_timeout_sec": 20,
     "reducer_max_tokens": 4096,
     "reducer_api_key": "",
+    "pretool": True,
+    "ls_max_lines": 200,
+    "grep_max_count": 80,
+    "stash": True,
+    "stash_ttl_days": 7,
+    "stash_max_mb": 512,
+    "session_tool_mb_warn": 2,
 }
 
 

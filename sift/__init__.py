@@ -5,6 +5,8 @@ from .metrics import append_metric, summarize
 from .prices import cost_usd, price_for
 from .classify import classify
 from .shrink import shrink_tool
+from .constrain import constrain
+from .observe import parse_transcript, parse_projects
 
 __all__ = [
     "load_config",
@@ -15,4 +17,7 @@ __all__ = [
     "price_for",
     "classify",
     "shrink_tool",
+    "constrain",
+    "parse_transcript",
+    "parse_projects",
 ]

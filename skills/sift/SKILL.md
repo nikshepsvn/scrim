@@ -12,6 +12,12 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sift.py" --today
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sift.py"
 ```
 
+Omitted original:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sift.py" get <id> [start-end]
+```
+
 Lifetime shadow $ from transcripts:
 
 ```bash

@@ -25,6 +25,10 @@ def _nbytes(obj: Any) -> int:
         return len(str(obj))
 
 
+def response_text(resp: Any) -> str | None:
+    return _as_text(resp)
+
+
 def _as_text(resp: Any) -> str | None:
     if isinstance(resp, str):
         return resp
@@ -105,8 +109,9 @@ def _wrap_text(resp: Any, text: str, *, mcp: bool) -> dict:
     }
 
 
-def _annotate(body: str, n_orig: int, kind: str) -> str:
-    return body + f"\n\n[sift] {kind}: {n_orig} → {len(body)} bytes. Re-run with a tighter query if you need the rest."
+def _annotate(body: str, n_orig: int, kind: str, stash_id: str | None = None) -> str:
+    extra = f" Original: `sift get {stash_id}`" if stash_id else ""
+    return body + f"\n\n[sift] {kind}: {n_orig} → {len(body)} bytes.{extra}"
 
 
 def _optimize_text(kind: str, text: str, cfg: dict) -> str | None:
