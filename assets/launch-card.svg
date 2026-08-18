@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="scrim — signal goes through, glare does not. 183,412 bytes in, 236 bytes out. 47% cut on 29k real calls, zero dropped fails. claude code + codex.">
+  <defs>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0c0b0a"/>
+      <stop offset="0.5" stop-color="#0c0b0a"/>
+      <stop offset="1" stop-color="#16120e"/>
+    </linearGradient>
+    <radialGradient id="lamp" cx="0.5" cy="0.44" r="0.66">
+      <stop offset="0" stop-color="#f0c36a"/>
+      <stop offset="0.38" stop-color="#e8a04a"/>
+      <stop offset="0.72" stop-color="#e8a04a" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#e8a04a" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#fade)"/>
+
+  <!-- ambient weave, full field -->
+  <g stroke="#e8a04a" stroke-width="1" opacity="0.06" fill="none">
+    <path d="M0 60h620M0 92h560M0 124h600M0 156h540M0 188h610M0 220h570M0 252h620M0 284h550M0 316h590M0 348h615M0 380h545M0 412h605M0 444h565M0 476h620M0 508h555M0 540h595M0 572h610M0 604h550M0 636h600M0 668h570M0 700h615M0 732h545M0 764h605M0 796h575M0 828h610M0 860h560"/>
+  </g>
+
+  <!-- the lamp -->
+  <circle cx="340" cy="430" r="300" fill="url(#lamp)"/>
+
+  <!-- fine threads, visible in the glow -->
+  <g stroke="#0c0b0a" stroke-width="2" opacity="0.3" fill="none">
+    <path d="M100 180h480M100 196h480M100 212h480M100 262h480M100 278h480M100 328h480M100 344h480M100 394h480M100 410h480M100 460h480M100 476h480M100 526h480M100 542h480M100 592h480M100 608h480M100 658h480M100 674h480"/>
+  </g>
+
+  <!-- cloth bands, denser toward the hem -->
+  <g stroke="#0c0b0a" stroke-linecap="butt" fill="none">
+    <path d="M60 226h560" stroke-width="22"/>
+    <path d="M60 306h560" stroke-width="28"/>
+    <path d="M60 388h560" stroke-width="36"/>
+    <path d="M60 472h560" stroke-width="46"/>
+    <path d="M60 560h560" stroke-width="58"/>
+    <path d="M60 652h560" stroke-width="72"/>
+  </g>
+
+  <!-- one thread of signal escapes the cloth -->
+  <path d="M620 430 H 700" stroke="#f0c36a" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- ============ copy ============ -->
+  <text x="760" y="330" class="mono" font-size="132" font-weight="600" fill="#f4efe6" letter-spacing="4">scrim</text>
+
+  <text x="766" y="408" class="mono" font-size="40" fill="#e8a04a">signal goes through.</text>
+  <text x="766" y="462" class="mono" font-size="40" fill="#e8a04a" fill-opacity="0.75">glare does not.</text>
+
+  <path d="M766 516h700" stroke="#e8a04a" stroke-opacity="0.25" stroke-width="1.5"/>
+
+  <text x="766" y="578" class="mono" font-size="33">
+    <tspan fill="#f4efe6" fill-opacity="0.55">183,412 bytes in</tspan>
+    <tspan fill="#e8a04a"> &#8594; </tspan>
+    <tspan fill="#f0c36a">236 bytes out</tspan>
+  </text>
+
+  <text x="766" y="634" class="mono" font-size="25" fill="#f4efe6" fill-opacity="0.55">47% cut on 29k real calls &#183; zero dropped fails</text>
+  <text x="766" y="682" class="mono" font-size="25" fill="#f4efe6" fill-opacity="0.55">nothing lost &#8212; originals kept 7 days</text>
+
+  <text x="766" y="770" class="mono" font-size="25">
+    <tspan fill="#e8a04a" fill-opacity="0.85">claude code + codex</tspan>
+    <tspan fill="#f4efe6" fill-opacity="0.4">  &#183;  github.com/nikshepsvn/scrim</tspan>
+  </text>
+</svg>
