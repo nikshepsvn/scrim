@@ -4,8 +4,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from sift.classify import classify
-from sift.shrink import shrink_tool
+from scrim.classify import classify
+from scrim.shrink import shrink_tool
 
 CFG = {
     "shrink": True,

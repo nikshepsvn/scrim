@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from sift.constrain import constrain
+from scrim.constrain import constrain
 
 CFG = {"pretool": True, "ls_max_lines": 50, "grep_max_count": 20}
 

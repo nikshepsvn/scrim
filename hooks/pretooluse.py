@@ -11,8 +11,8 @@ PLUGIN_ROOT = os.environ.get("CLAUDE_PLUGIN_ROOT")
 if PLUGIN_ROOT and PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
-from sift.config import load_config
-from sift.constrain import constrain
+from scrim.config import load_config
+from scrim.constrain import constrain
 
 
 def main() -> int:
@@ -28,7 +28,7 @@ def main() -> int:
         if decision.get("updated_input") is not None:
             hook["updatedInput"] = decision["updated_input"]
         if decision.get("note"):
-            hook["additionalContext"] = f"[sift] {decision['note']}"
+            hook["additionalContext"] = f"[scrim] {decision['note']}"
         if decision.get("additionalContext"):
             hook["additionalContext"] = decision["additionalContext"]
         out = {"hookSpecificOutput": hook} if len(hook) > 1 else {}

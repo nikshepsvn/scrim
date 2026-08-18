@@ -1,9 +1,9 @@
 # Config reference
 
-File: `~/.sift/config.json`  
+File: `~/.scrim/config.json`  
 Template: [`config.example.json`](../config.example.json)
 
-On first run, `~/.spend` is renamed to `~/.sift` if the new path does not exist.
+On first run, `~/.sift` or `~/.spend` is renamed to `~/.scrim` if the new path does not exist.
 
 Unknown keys are ignored. Missing keys use defaults.
 
@@ -30,10 +30,10 @@ Unknown keys are ignored. Missing keys use defaults.
 | `pretool` | `true` | Cap unbounded `ls`/`rg`/`Grep` before they run |
 | `ls_max_lines` | `200` | `head -n` for `ls -R` / `find` / `tree` |
 | `grep_max_count` | `80` | `Grep.head_limit` and `rg --max-count` |
-| `stash` | `true` | Keep omitted originals in `~/.sift/blobs/` |
+| `stash` | `true` | Keep omitted originals in `~/.scrim/blobs/` |
 | `stash_ttl_days` | `7` | Delete older blobs |
 | `stash_max_mb` | `512` | Cap stash dir |
 | `session_tool_mb_warn` | `2` | Stop-hook warning threshold |
 | `max_open_subagents` | `8` | Warn (do not block) when this many are already open |
 
-Env, in order: `OPENROUTER_API_KEY` or `ANTHROPIC_API_KEY`, then `SPEND_REDUCER_KEY` / `SIFT_REDUCER_KEY`, then `reducer_api_key`.
+Env, in order: `OPENROUTER_API_KEY` or `ANTHROPIC_API_KEY`, then `SPEND_REDUCER_KEY` / `SCRIM_REDUCER_KEY`, then `reducer_api_key`.

@@ -13,10 +13,10 @@ PLUGIN_ROOT = os.environ.get("CLAUDE_PLUGIN_ROOT")
 if PLUGIN_ROOT and PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
-from sift.config import data_dir, load_config
-from sift.metrics import summarize
-from sift.observe import parse_transcript
-from sift.report import render
+from scrim.config import data_dir, load_config
+from scrim.metrics import summarize
+from scrim.observe import parse_transcript
+from scrim.report import render
 
 
 def main() -> int:
@@ -45,7 +45,7 @@ def main() -> int:
         hook = {"hookEventName": "Stop"}
         if tot_in >= warn_mb * 1_000_000:
             hook["additionalContext"] = (
-                f"[sift] this session: {tot_in/1e6:.1f} MB of tool results. Run /sift."
+                f"[scrim] this session: {tot_in/1e6:.1f} MB of tool results. Run /scrim."
             )
         print(json.dumps({"hookSpecificOutput": hook} if len(hook) > 1 else {}))
     except Exception:

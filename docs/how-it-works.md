@@ -14,11 +14,11 @@ PostToolUse  (fail-open)
          │
          ▼
 Stop
-    write ~/.sift/last.txt  (usage + tools)
+    write ~/.scrim/last.txt  (usage + tools)
     warn if this session dumped ≥2 MB
 ```
 
-`/sift` should spawn **sift-analyst** (Haiku). Stash pulls go through **sift-retrieve** so the parent never loads the blob.
+`/scrim` should spawn **scrim-analyst** (Haiku). Stash pulls go through **scrim-retrieve** so the parent never loads the blob.
 
 `SubagentStart` / `SubagentStop` count swarms and inject a hint past `max_open_subagents`. Claude Code does not let a hook cancel a spawn.
 
@@ -32,4 +32,4 @@ Harness stubs (`<persisted-output>`) are left alone.
 
 ## Why not gzip
 
-Tokenizers count text. A compressed blob is unreadable and still billed if you send it. Sift emits a **shorter string the model can use**.
+Tokenizers count text. A compressed blob is unreadable and still billed if you send it. Scrim emits a **shorter string the model can use**.

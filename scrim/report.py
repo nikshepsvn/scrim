@@ -1,10 +1,10 @@
-"""Human-readable Sift report."""
+"""Human-readable Scrim report."""
 
 from __future__ import annotations
 
 
 def render(usage: dict, tools: dict) -> str:
-    lines = ["Sift"]
+    lines = ["Scrim"]
     tot = (usage or {}).get("total") or {}
     if tot.get("turns"):
         cr_pct = (usage.get("cache_read_share") or 0) * 100
@@ -25,7 +25,7 @@ def render(usage: dict, tools: dict) -> str:
         lines.append(
             f"  {tools['n']:,} calls   {tools['bytes_in']/1e6:.2f} MB in → "
             f"{tools['bytes_out']/1e6:.2f} MB out   "
-            f"{tools['saved']/1e6:.2f} MB sifted  ({tools['shrunk']:,} calls)"
+            f"{tools['saved']/1e6:.2f} MB thinned  ({tools['shrunk']:,} calls)"
         )
         for name, v in list((tools.get("by_tool") or {}).items())[:8]:
             lines.append(f"    {name:<40} n={v['n']:<5} {v['in']/1e6:6.2f} MB")

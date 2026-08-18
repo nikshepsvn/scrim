@@ -1,13 +1,15 @@
-# Sift
+# Scrim
+
+A **scrim** is the cloth in front of a light: signal goes through, glare does not. This plugin sits between the tool and the model the same way.
 
 **Cost observability and tool-output optimization for Claude Code.**
 
-Sift does four things:
+Scrim does four things:
 
 1. **See** — cache-read vs write vs output, by model, plus what tools dumped  
 2. **Prevent** — cap `ls -R`, `find`, and `rg` *before* they run  
 3. **Thin** — drop screenshots, passing tests, log spam; stash the original so you can pull it back  
-4. **Delegate** — `/sift` and stash retrieval run on a **Haiku** subagent so Opus does not spend a turn on the report  
+4. **Delegate** — `/scrim` and stash retrieval run on a **Haiku** subagent so Opus does not spend a turn on the report  
 
 Swarm watch: `SubagentStart` counts open agents and warns after `max_open_subagents` (default 8). It cannot block a spawn.
 
@@ -31,7 +33,7 @@ What the model gets:
 FAIL test_b
 AssertionError: boom
 
-[sift] test_build_lint: 2827 → 34 bytes.
+[scrim] test_build_lint: 2827 → 34 bytes.
 ```
 
 Chrome `browser_batch` with six screenshots: images dropped, text kept. On this machine that was 104 MB → 3 MB of MCP payload.
@@ -39,41 +41,41 @@ Chrome `browser_batch` with six screenshots: images dropped, text kept. On this 
 ## Install
 
 ```bash
-git clone git@github.com:nikshepsvn/sift.git
-claude --plugin-dir "$(pwd)/sift"
+git clone git@github.com:nikshepsvn/scrim.git
+claude --plugin-dir "$(pwd)/scrim"
 ```
 
 Needs GitHub auth (private repo):
 
 ```text
-/plugin marketplace add nikshepsvn/sift
-/plugin install sift@sift
+/plugin marketplace add nikshepsvn/scrim
+/plugin install scrim@scrim
 ```
 
-Restart Claude Code. Run any tool. Then `/sift`.
+Restart Claude Code. Run any tool. Then `/scrim`.
 
 ```bash
 make test
 ```
 
-## `/sift`
+## `/scrim`
 
 ```
-Sift
+Scrim
 Usage  (list prices, not Stripe)
   $1,204 API-eq   turns 412   cache-read 96%   cache-write 3.1M   out 80k
     claude-opus-5                    $980   300 turns
     claude-fable-5                   $210   112 turns
 Tools  (this plugin)
-  142 calls   4.20 MB in → 0.31 MB out   3.89 MB sifted
+  142 calls   4.20 MB in → 0.31 MB out   3.89 MB thinned
     mcp__claude-in-chrome__browser_batch   n=2     3.80 MB
 ```
 
 ```bash
-python3 scripts/sift.py --today
-python3 scripts/sift.py --backfill
-python3 scripts/sift.py get <id>          # omitted original
-python3 scripts/sift.py get <id> 118-130
+python3 scripts/scrim.py --today
+python3 scripts/scrim.py --backfill
+python3 scripts/scrim.py get <id>          # omitted original
+python3 scripts/scrim.py get <id> 118-130
 ```
 
 Dollar figures are Opus/Sonnet list prices. Max/Ultra subscribers do not pay that cash.
@@ -93,9 +95,9 @@ Dollar figures are Opus/Sonnet list prices. Max/Ultra subscribers do not pay tha
 
 gzip does not reduce tokens. The model has to read text.
 
-Copy [`config.example.json`](config.example.json) to `~/.sift/config.json`. `"shrink": false` logs only. Full key list: [docs/config.md](docs/config.md).
+Copy [`config.example.json`](config.example.json) to `~/.scrim/config.json`. `"shrink": false` logs only. Full key list: [docs/config.md](docs/config.md).
 
-If `~/.spend` still exists from the old name, the first run renames it.
+If `~/.sift` or `~/.spend` still exists, the first run renames it to `~/.scrim`.
 
 ## Optional: OpenRouter extract
 
@@ -114,7 +116,7 @@ export OPENROUTER_API_KEY=sk-or-...
 }
 ```
 
-The macOS Claude app often does not inherit shell env. You can set `reducer_api_key` in `~/.sift/config.json` instead. Do not commit that file.
+The macOS Claude app often does not inherit shell env. You can set `reducer_api_key` in `~/.scrim/config.json` instead. Do not commit that file.
 
 Skip Morph (`morph/morph-v3-*`) and Inkling. Morph reprints the dump. Inkling burns the budget on hidden reasoning. Notes: [docs/eval.md](docs/eval.md). Backup: `google/gemini-2.5-flash`.
 
@@ -122,7 +124,7 @@ Skip Morph (`morph/morph-v3-*`) and Inkling. Morph reprints the dump. Inkling bu
 
 Default: nothing extra leaves the machine. Metrics are counts and tool names.
 
-Reducer on: truncated tool output goes to OpenRouter (or Anthropic). Cache: `~/.sift/reducer-cache/`.
+Reducer on: truncated tool output goes to OpenRouter (or Anthropic). Cache: `~/.scrim/reducer-cache/`.
 
 ## Codex
 

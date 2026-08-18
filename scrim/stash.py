@@ -53,7 +53,7 @@ def get(bid: str, start: int | None = None, end: int | None = None) -> str | Non
     lo = max(1, start or 1)
     hi = min(len(lines), end or len(lines))
     body = "\n".join(lines[lo - 1 : hi])
-    return f"[sift] {bid} lines {lo}-{hi} of {len(lines)}\n{body}"
+    return f"[scrim] {bid} lines {lo}-{hi} of {len(lines)}\n{body}"
 
 
 def _gc() -> None:

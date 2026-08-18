@@ -34,18 +34,18 @@ DEFAULTS = {
 
 
 def data_dir() -> Path:
-    new = Path.home() / ".sift"
-    old = Path.home() / ".spend"
-    if new.exists():
-        return new
-    if old.exists():
-        try:
-            old.rename(new)
-            return new
-        except OSError:
-            return old
-    new.mkdir(parents=True, exist_ok=True)
-    return new
+    dest = Path.home() / ".scrim"
+    if dest.exists():
+        return dest
+    for old in (Path.home() / ".sift", Path.home() / ".spend"):
+        if old.exists():
+            try:
+                old.rename(dest)
+                return dest
+            except OSError:
+                return old
+    dest.mkdir(parents=True, exist_ok=True)
+    return dest
 
 
 def load_config() -> dict:

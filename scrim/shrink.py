@@ -110,8 +110,8 @@ def _wrap_text(resp: Any, text: str, *, mcp: bool) -> dict:
 
 
 def _annotate(body: str, n_orig: int, kind: str, stash_id: str | None = None) -> str:
-    extra = f" Original: `sift get {stash_id}`" if stash_id else ""
-    return body + f"\n\n[sift] {kind}: {n_orig} → {len(body)} bytes.{extra}"
+    extra = f" Original: `scrim get {stash_id}`" if stash_id else ""
+    return body + f"\n\n[scrim] {kind}: {n_orig} → {len(body)} bytes.{extra}"
 
 
 def _optimize_text(kind: str, text: str, cfg: dict) -> str | None:
@@ -136,11 +136,11 @@ def _optimize_text(kind: str, text: str, cfg: dict) -> str | None:
         return head_tail(text, list_n, 10, "paths")
     if kind == "web":
         if len(text) > web_cap:
-            return text[:web_cap] + f"\n[sift] web capped at {web_cap} bytes"
+            return text[:web_cap] + f"\n[scrim] web capped at {web_cap} bytes"
         return None
     if kind == "mcp":
         if len(text) > mcp_cap:
-            return text[:mcp_cap] + f"\n[sift] mcp text capped at {mcp_cap} bytes"
+            return text[:mcp_cap] + f"\n[scrim] mcp text capped at {mcp_cap} bytes"
         return None
     if kind == "bash":
         sig = keep_signal_lines(text)
@@ -222,7 +222,7 @@ def shrink_tool(tool_name: str, tool_input: Any, tool_response: Any, cfg: dict) 
         result["updated_mcp_output"] = working if kind == "mcp" else None
         if kind == "mcp":
             if isinstance(working, list):
-                working = list(working) + [{"type": "text", "text": "[sift] " + notes[0]}]
+                working = list(working) + [{"type": "text", "text": "[scrim] " + notes[0]}]
                 result["updated_mcp_output"] = working
         result["bytes_out"] = _nbytes(working)
         result["shrunk"] = True

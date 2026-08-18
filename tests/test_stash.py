@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from sift.stash import get, put
+from scrim.stash import get, put
 
 
 def test_roundtrip():

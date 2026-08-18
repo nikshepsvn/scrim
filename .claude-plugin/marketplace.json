@@ -1,15 +1,19 @@
 {
-  "name": "sift",
+  "name": "scrim",
   "owner": {
     "name": "nikshepsvn",
     "url": "https://github.com/nikshepsvn"
   },
-  "description": "Sift tool output before the model reads it.",
+  "description": "A scrim between the tool and the model.",
+  "renames": {
+    "sift": "scrim",
+    "spend": "scrim"
+  },
   "plugins": [
     {
-      "name": "sift",
+      "name": "scrim",
       "source": "./",
-      "displayName": "Sift",
+      "displayName": "Scrim",
       "description": "See where tokens go. Cap fat tools before they run. Thin what still gets through.",
       "license": "MIT",
       "keywords": ["hooks", "context", "quota", "tokens"]

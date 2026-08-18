@@ -39,7 +39,7 @@ def head_tail(text: str, head: int, tail: int, label: str) -> str | None:
         return None
     omitted = len(lines) - head - tail
     parts = lines[:head]
-    parts.append(f"[sift] … {omitted} {label} omitted …")
+    parts.append(f"[scrim] … {omitted} {label} omitted …")
     parts.extend(lines[-tail:])
     return "\n".join(parts)
 
@@ -55,10 +55,10 @@ def drain(text: str, max_groups: int = 40, samples: int = 1) -> str | None:
     if len(groups) >= len(text.splitlines()) * 0.8:
         return None  # not repetitive
     rows = sorted(groups.items(), key=lambda kv: -len(kv[1]))
-    out = [f"[sift] {len(text.splitlines())} lines → {len(groups)} templates"]
+    out = [f"[scrim] {len(text.splitlines())} lines → {len(groups)} templates"]
     for i, (tmpl, members) in enumerate(rows):
         if i >= max_groups:
-            out.append(f"[sift] +{len(rows) - max_groups} more templates")
+            out.append(f"[scrim] +{len(rows) - max_groups} more templates")
             break
         out.append(f"[{len(members):6}] {tmpl[:240]}")
         for s in members[:samples]:

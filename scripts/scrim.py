@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""sift — report, backfill, retrieve omitted tool output."""
+"""scrim — report, backfill, retrieve omitted tool output."""
 
 from __future__ import annotations
 
@@ -13,11 +13,11 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from sift.config import data_dir, load_config
-from sift.metrics import summarize
-from sift.observe import parse_projects, parse_transcript
-from sift.report import render
-from sift.stash import get as stash_get
+from scrim.config import data_dir, load_config
+from scrim.metrics import summarize
+from scrim.observe import parse_projects, parse_transcript
+from scrim.report import render
+from scrim.stash import get as stash_get
 
 
 def cmd_report(today: bool, session_path: str | None) -> int:
@@ -49,14 +49,14 @@ def cmd_get(bid: str, lines: str | None) -> int:
             start = end = int(lines)
     text = stash_get(bid, start, end)
     if text is None:
-        print(f"sift: no stash {bid!r}", file=sys.stderr)
+        print(f"scrim: no stash {bid!r}", file=sys.stderr)
         return 1
     print(text)
     return 0
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Sift: cost observability and tool-output thinning")
+    p = argparse.ArgumentParser(description="Scrim: cost observability and tool-output thinning")
     p.add_argument("--today", action="store_true")
     p.add_argument("--backfill", action="store_true", help="alias for full transcript usage")
     p.add_argument("--session", metavar="JSONL", help="one Claude Code transcript")
@@ -72,7 +72,7 @@ def main() -> int:
         return 0
     if args.cmd == "get":
         if not args.target:
-            print("usage: sift get <id> [start-end]", file=sys.stderr)
+            print("usage: scrim get <id> [start-end]", file=sys.stderr)
             return 2
         return cmd_get(args.target, args.lines)
     if args.backfill:

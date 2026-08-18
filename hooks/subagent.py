@@ -11,8 +11,8 @@ PLUGIN_ROOT = os.environ.get("CLAUDE_PLUGIN_ROOT")
 if PLUGIN_ROOT and PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
-from sift.config import load_config
-from sift.metrics import append_metric, iter_metrics
+from scrim.config import load_config
+from scrim.metrics import append_metric, iter_metrics
 
 
 def _open_count(session_id: str) -> int:
@@ -56,7 +56,7 @@ def main() -> int:
             open_n = _open_count(sid)
             if open_n >= cap:
                 hook["additionalContext"] = (
-                    f"[sift] {open_n} subagents already open in this session "
+                    f"[scrim] {open_n} subagents already open in this session "
                     f"(cap {cap}). Finish work yourself instead of spawning more."
                 )
         print(json.dumps({"hookSpecificOutput": hook} if len(hook) > 1 else {}))

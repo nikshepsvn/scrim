@@ -1,12 +1,12 @@
 {
-  "name": "sift",
-  "version": "0.5.0",
-  "description": "Cost observability and tool-output optimization for Claude Code. Local, fail-open.",
+  "name": "scrim",
+  "version": "0.6.0",
+  "description": "A scrim between the tool and the model. Cost observability and tool-output optimization. Local, fail-open.",
   "author": {
     "name": "nikshepsvn"
   },
-  "homepage": "https://github.com/nikshepsvn/sift",
-  "repository": "https://github.com/nikshepsvn/sift",
+  "homepage": "https://github.com/nikshepsvn/scrim",
+  "repository": "https://github.com/nikshepsvn/scrim",
   "license": "MIT",
   "keywords": ["claude-code", "hooks", "context", "quota", "openrouter"]
 }

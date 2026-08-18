@@ -11,10 +11,10 @@ PLUGIN_ROOT = os.environ.get("CLAUDE_PLUGIN_ROOT")
 if PLUGIN_ROOT and PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
-from sift.config import load_config
-from sift.metrics import append_metric
-from sift.shrink import response_text, shrink_tool
-from sift.stash import put as stash_put
+from scrim.config import load_config
+from scrim.metrics import append_metric
+from scrim.shrink import response_text, shrink_tool
+from scrim.stash import put as stash_put
 
 
 def _append_note(decision: dict, extra: str) -> None:
@@ -54,7 +54,7 @@ def main() -> int:
                     tool_name=tool_name,
                 )
                 if stash_id:
-                    extra = f"\n[sift] full output: sift get {stash_id}"
+                    extra = f"\n[scrim] full output: scrim get {stash_id}"
                     _append_note(decision, extra)
                     decision["note"] = (decision.get("note") or "") + extra
         append_metric(

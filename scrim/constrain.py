@@ -40,6 +40,6 @@ def constrain(tool_name: str, tool_input: Any, cfg: dict) -> dict:
     if "chrome" in lname or "playwright" in lname:
         if "screenshot" in lname or "computer" in lname or "browser_batch" in lname:
             return {
-                "additionalContext": "[sift] Prefer accessibility/text over another screenshot unless pixels are required."
+                "additionalContext": "[scrim] Prefer accessibility/text over another screenshot unless pixels are required."
             }
     return {}
