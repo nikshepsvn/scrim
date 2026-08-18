@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+Identity redesign: lamp-through-cloth mark, single banner lockup, and a before/after diagram (`assets/diagram.svg`) replacing the ASCII box. README restructured — what / why / install first, reducer and Codex parked below.
+
 ## 0.7.0
 
 CLI grows up: `doctor`, `kinds`, `stashes`, `prune`, `--json`, `--version`.

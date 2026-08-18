@@ -1,34 +1,48 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 480" role="img" aria-label="Scrim — a cloth between the tool and the model">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 480" role="img" aria-label="Scrim — a lamp glowing through a hanging cloth, next to the wordmark: the cloth between the tool and the model">
   <defs>
     <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#0c0b0a"/>
       <stop offset="0.55" stop-color="#0c0b0a"/>
       <stop offset="1" stop-color="#16120e"/>
     </linearGradient>
-    <linearGradient id="gel" x1="0" y1="1" x2="0.2" y2="0">
-      <stop offset="0" stop-color="#e8a04a" stop-opacity="0"/>
-      <stop offset="0.55" stop-color="#e8a04a" stop-opacity="0.18"/>
-      <stop offset="1" stop-color="#f0c36a" stop-opacity="0.55"/>
-    </linearGradient>
-    <clipPath id="frame">
-      <rect width="1280" height="480" rx="0"/>
-    </clipPath>
+    <radialGradient id="lamp" cx="0.5" cy="0.42" r="0.66">
+      <stop offset="0" stop-color="#f0c36a"/>
+      <stop offset="0.38" stop-color="#e8a04a"/>
+      <stop offset="0.72" stop-color="#e8a04a" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#e8a04a" stop-opacity="0"/>
+    </radialGradient>
   </defs>
   <rect width="1280" height="480" fill="url(#fade)"/>
-  <g clip-path="url(#frame)" stroke="#e8a04a" fill="none" stroke-linecap="butt">
-    <!-- dense weave, left -->
-    <g stroke-width="1" opacity="0.14">
-      <path d="M0 16h620M0 24h620M0 32h620M0 40h620M0 48h620M0 56h620M0 64h620M0 72h620M0 80h620M0 88h620M0 96h620M0 104h620M0 112h620M0 120h620M0 128h620M0 136h620M0 144h620M0 152h620M0 160h620M0 168h620M0 176h620M0 184h620M0 192h620M0 200h620M0 208h620M0 216h620M0 224h620M0 232h620M0 240h620M0 248h620M0 256h620M0 264h620M0 272h620M0 280h620M0 288h620M0 296h620M0 304h620M0 312h620M0 320h620M0 328h620M0 336h620M0 344h620M0 352h620M0 360h620M0 368h620M0 376h620M0 384h620M0 392h620M0 400h620M0 408h620M0 416h620M0 424h620M0 432h620M0 440h620M0 448h620M0 456h620M0 464h620"/>
-    </g>
-    <!-- opening weave -->
-    <g stroke-width="1.15" opacity="0.35">
-      <path d="M520 28h280M520 52h280M520 76h280M520 100h280M520 124h280M520 148h280M520 172h280M520 196h280M520 220h280M520 244h280M520 268h280M520 292h280M520 316h280M520 340h280M520 364h280M520 388h280M520 412h280M520 436h280M520 460h280"/>
-    </g>
-    <g stroke-width="1.4" opacity="0.85">
-      <path d="M760 40h520M760 80h520M760 120h520M760 160h520M760 200h520M760 240h520M760 280h520M760 320h520M760 360h520M760 400h520M760 440h520"/>
-    </g>
+
+  <!-- ambient weave, left field -->
+  <g stroke="#e8a04a" stroke-width="1" opacity="0.07" fill="none">
+    <path d="M0 24h500M0 40h540M0 56h470M0 72h520M0 88h450M0 104h530M0 120h490M0 136h545M0 152h460M0 168h515M0 184h480M0 200h540M0 216h455M0 232h525M0 248h495M0 264h535M0 280h465M0 296h510M0 312h485M0 328h540M0 344h450M0 360h520M0 376h475M0 392h530M0 408h460M0 424h515M0 440h490M0 456h540"/>
   </g>
-  <rect width="1280" height="480" fill="url(#gel)"/>
-  <text x="72" y="250" fill="#f4efe6" font-family="ui-serif, Georgia, 'Times New Roman', serif" font-size="92" font-weight="500" letter-spacing="-2">Scrim</text>
-  <text x="76" y="302" fill="#e8a04a" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="22" letter-spacing="3">THE CLOTH BETWEEN THE TOOL AND THE MODEL</text>
+
+  <!-- the lamp -->
+  <circle cx="300" cy="240" r="170" fill="url(#lamp)"/>
+
+  <!-- fine threads, visible only where the light comes through -->
+  <g stroke="#0c0b0a" stroke-width="1.4" opacity="0.3" fill="none">
+    <path d="M110 80h380M110 90h380M110 100h380M110 110h380M110 150h380M110 160h380M110 200h380M110 210h380M110 250h380M110 260h380M110 300h380M110 310h380M110 350h380M110 360h380M110 400h380"/>
+  </g>
+
+  <!-- cloth bands, denser toward the hem — the mark at scale -->
+  <g stroke="#0c0b0a" stroke-linecap="butt" fill="none">
+    <path d="M60 122h480" stroke-width="15"/>
+    <path d="M60 174h480" stroke-width="19"/>
+    <path d="M60 225h480" stroke-width="24"/>
+    <path d="M60 277h480" stroke-width="30"/>
+    <path d="M60 329h480" stroke-width="36"/>
+    <path d="M60 380h480" stroke-width="41"/>
+  </g>
+
+  <!-- clear side -->
+  <g stroke="#e8a04a" stroke-width="1" opacity="0.1" fill="none">
+    <path d="M620 40h660M660 440h620"/>
+  </g>
+
+  <text x="580" y="262" fill="#f4efe6" font-family="ui-serif, Georgia, 'Times New Roman', serif" font-size="104" font-weight="500" letter-spacing="-2">Scrim</text>
+  <text x="586" y="318" fill="#e8a04a" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="20" letter-spacing="2.6">THE CLOTH BETWEEN THE TOOL AND THE MODEL</text>
+  <text x="586" y="356" fill="#f4efe6" fill-opacity="0.5" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="17">Cost observability &amp; tool-output thinning for Claude Code</text>
 </svg>

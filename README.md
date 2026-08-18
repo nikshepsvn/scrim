@@ -1,16 +1,9 @@
 <p align="center">
-  <img src="assets/mark.svg" width="72" height="72" alt="Scrim mark">
-</p>
-
-<h1 align="center">Scrim</h1>
-
-<p align="center">
-  <em>The cloth between the tool and the model.</em>
+  <img src="assets/banner.svg" width="100%" alt="Scrim — the cloth between the tool and the model. A lamp glowing through a hanging cloth.">
 </p>
 
 <p align="center">
-  Signal goes through. Glare does not.<br>
-  Cost observability and tool-output optimization for <a href="https://code.claude.com">Claude Code</a>.
+  <strong>Signal goes through. Glare does not.</strong>
 </p>
 
 <p align="center">
@@ -20,42 +13,17 @@
   <img src="https://img.shields.io/badge/license-MIT-16120e?style=flat-square&labelColor=0c0b0a" alt="MIT">
 </p>
 
-<p align="center">
-  <img src="assets/banner.svg" width="100%" alt="A weave that opens from left to right — dense noise, then light">
-</p>
-
----
+<br>
 
 In a theater, a **scrim** hangs in front of the lamp. The scene stays lit. The bulb never hits your eyes.
 
-Coding agents don't have one. They read every passing test, the full `ls -R`, and six Chrome screenshots — then you pay (or compact) for the glare.
+Coding agents don't have one. They read every passing test, the full `ls -R`, and six Chrome screenshots — then you pay (or compact) for the glare. Scrim hangs in front of the tool result:
 
-Scrim hangs in front of the tool result.
+<p align="center">
+  <img src="assets/diagram.svg" width="100%" alt="npm test emits 4,212 lines. Passing lines stop at the scrim; the failing test, its assertion, and a retrieval footer pass through — 183,412 bytes in, 236 bytes out.">
+</p>
 
-```
-  npm test · 4,212 lines                         what the model reads
-┌────────────────────────────┐                 ┌──────────────────────┐
-│ PASS auth   (42)           │                 │ FAIL checkout        │
-│ PASS cart   (38)           │     scrim       │ AssertionError       │
-│ PASS orders (57)           │  ───────────►   │ expected 500 == 502  │
-│ FAIL checkout              │                 │ at checkout.test:118 │
-│ PASS shipping (22)         │                 │                      │
-│ … 4,180 more passing …     │                 │ [scrim] 4212 → 34 B  │
-└────────────────────────────┘                 └──────────────────────┘
-```
-
-`Read` and `Edit` never go through it. Hooks **fail open** — on any error the agent sees the original result. It does not switch your model.
-
-## Four jobs
-
-| Job | Where | What |
-|---|---|---|
-| **See** | Transcripts + hooks | Cache-read share, list-price $, MB by tool and kind |
-| **Prevent** | `PreToolUse` | `ls -R` / `find` / `rg` capped *before* they run |
-| **Thin** | `PostToolUse` | Tests, logs, grep, listings, Chrome images, fat JSON |
-| **Delegate** | Subagents | `/scrim` and stash retrieve run on **Haiku**, not your session model |
-
-Swarm watch counts open subagents and warns after eight. Claude Code will not let a hook cancel a spawn.
+Three things it will never do: touch `Read` or `Edit`, break your session (hooks **fail open** — on any error the agent sees the original result), or switch your model.
 
 ## Install
 
@@ -64,21 +32,14 @@ git clone git@github.com:nikshepsvn/scrim.git
 claude --plugin-dir "$(cd scrim && pwd)"
 ```
 
-Private marketplace (needs GitHub auth):
+Or from the private marketplace (needs GitHub auth):
 
 ```text
 /plugin marketplace add nikshepsvn/scrim
 /plugin install scrim@scrim
 ```
 
-Restart Claude Code. Run a tool. Then `/scrim`.
-
-```bash
-make test                        # hermetic, stdlib only
-python3 scripts/scrim.py doctor  # if nothing shows up
-```
-
-## `/scrim`
+Restart Claude Code. Run a tool. Then `/scrim`:
 
 ```
 Scrim
@@ -92,18 +53,20 @@ Tools  (this plugin)
   stashed originals  12  (scrim get <id>)
 ```
 
-```bash
-python3 scripts/scrim.py --today           # local calendar day (add --json for machines)
-python3 scripts/scrim.py --backfill        # lifetime, retries deduped
-python3 scripts/scrim.py get <id> 118-130  # slice of an omitted original
-python3 scripts/scrim.py stashes           # what's retrievable
-python3 scripts/scrim.py kinds             # where the MB went, by kind
-python3 scripts/scrim.py doctor            # is the chain healthy
-python3 scripts/scrim.py prune             # trim old metrics + stash
-python3 scripts/scrim.py --config          # effective config + warnings
-```
-
 Those dollars are **list prices** (Fable at Fable rates, Opus at Opus rates). Max/Ultra is a subscription — you are looking at quota shape, not a card charge.
+
+If nothing shows up: `python3 scripts/scrim.py doctor`. Tests are hermetic, stdlib only: `make test`.
+
+## Four jobs
+
+| Job | Where | What |
+|---|---|---|
+| **See** | Transcripts + hooks | Cache-read share, list-price $, MB by tool and kind |
+| **Prevent** | `PreToolUse` | `ls -R` / `find` / `rg` capped *before* they run |
+| **Thin** | `PostToolUse` | Tests, logs, grep, listings, Chrome images, fat JSON |
+| **Delegate** | Subagents | `/scrim` and stash retrieve run on **Haiku**, not your session model |
+
+Swarm watch counts open subagents and warns after eight. Claude Code will not let a hook cancel a spawn.
 
 ## What gets through
 
@@ -122,13 +85,24 @@ If the rewrite would not actually be smaller, the original goes through. PreTool
 
 gzip does not reduce tokens. The model has to read text.
 
-Omitted bytes are stashed under `~/.scrim/blobs/` for seven days. Pull a slice with `scrim get` — preferably via the **scrim-retrieve** subagent, so the parent never loads the blob.
+**Nothing is lost.** Omitted bytes are stashed under `~/.scrim/blobs/` for seven days. Pull a slice with `scrim get` — preferably via the **scrim-retrieve** subagent, so the parent never loads the blob.
 
-Copy [`config.example.json`](config.example.json) → `~/.scrim/config.json`. `"shrink": false` logs only. Every key: [docs/config.md](docs/config.md).
+To tune it, copy [`config.example.json`](config.example.json) → `~/.scrim/config.json`. `"shrink": false` logs only. Every key: [docs/config.md](docs/config.md). Old `~/.sift` / `~/.spend` directories are renamed on first run.
 
-Old `~/.sift` / `~/.spend` directories are renamed on first run.
+## The CLI
 
-## Optional extract
+```bash
+python3 scripts/scrim.py --today           # local calendar day (add --json for machines)
+python3 scripts/scrim.py --backfill        # lifetime, retries deduped
+python3 scripts/scrim.py get <id> 118-130  # slice of an omitted original
+python3 scripts/scrim.py stashes           # what's retrievable
+python3 scripts/scrim.py kinds             # where the MB went, by kind
+python3 scripts/scrim.py doctor            # is the chain healthy
+python3 scripts/scrim.py prune             # trim old metrics + stash
+python3 scripts/scrim.py --config          # effective config + warnings
+```
+
+## Optional: extract with a model
 
 Filters are the default. For logs that still need a brain, turn on OpenRouter. **`inception/mercury-2`** was the only model in our bake-off that behaved like a reducer at hook latency. Use ≥4096 completion tokens.
 

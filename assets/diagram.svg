@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 470" role="img" aria-label="Before and after: npm test emits 4,212 lines; only the failing test, its assertion, and a scrim footer reach the model — 183,412 bytes in, 236 bytes out">
+  <defs>
+    <radialGradient id="pass" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f0c36a" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#f0c36a" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    </style>
+  </defs>
+
+  <rect width="1280" height="470" rx="16" fill="#0c0b0a"/>
+  <rect x="1" y="1" width="1278" height="468" rx="15" fill="none" stroke="#e8a04a" stroke-opacity="0.2"/>
+
+  <!-- ============ left: the glare ============ -->
+  <text x="48" y="42" class="mono" font-size="17" fill="#f4efe6" fill-opacity="0.75">$ npm test</text>
+  <text x="510" y="42" class="mono" font-size="14" fill="#f4efe6" fill-opacity="0.4" text-anchor="end">4,212 lines &#183; 183,412 bytes</text>
+
+  <rect x="40" y="58" width="470" height="334" rx="10" fill="#16120e" stroke="#f4efe6" stroke-opacity="0.08"/>
+  <g class="mono" font-size="16">
+    <text x="68" y="98"  fill="#f4efe6" fill-opacity="0.38">PASS  auth        (42)</text>
+    <text x="68" y="130" fill="#f4efe6" fill-opacity="0.38">PASS  cart        (38)</text>
+    <text x="68" y="162" fill="#f4efe6" fill-opacity="0.38">PASS  orders      (57)</text>
+    <text x="68" y="194" fill="#f0c36a" font-weight="600">FAIL  checkout</text>
+    <text x="68" y="226" fill="#f4efe6" fill-opacity="0.38">PASS  shipping    (22)</text>
+    <text x="68" y="258" fill="#f4efe6" fill-opacity="0.3">PASS  billing     (19)</text>
+    <text x="68" y="290" fill="#f4efe6" fill-opacity="0.22">PASS  webhooks    (31)</text>
+    <text x="68" y="322" fill="#f4efe6" fill-opacity="0.14">PASS  search      (44)</text>
+    <text x="68" y="360" fill="#f4efe6" fill-opacity="0.32">&#8942;  4,180 more passing lines</text>
+  </g>
+
+  <!-- passing lines head for the model and stop at the cloth -->
+  <g stroke="#f4efe6" stroke-opacity="0.13" stroke-width="1.5">
+    <path d="M510 92h62"/>
+    <path d="M510 124h62"/>
+    <path d="M510 156h62"/>
+    <path d="M510 220h62"/>
+    <path d="M510 252h62"/>
+    <path d="M510 284h62"/>
+  </g>
+
+  <!-- ============ the cloth ============ -->
+  <circle cx="600" cy="188" r="72" fill="url(#pass)"/>
+  <g stroke="#e8a04a" stroke-linecap="round">
+    <g stroke-width="2" opacity="0.55">
+      <path d="M572 56h56M572 72h56M572 88h56M572 104h56M572 120h56M572 136h56M572 152h56M572 168h56M572 184h56M572 200h56M572 216h56M572 232h56M572 248h56M572 264h56M572 280h56M572 296h56M572 312h56M572 328h56M572 344h56M572 360h56M572 376h56M572 392h56M572 408h56"/>
+    </g>
+  </g>
+  <text x="600" y="446" class="mono" font-size="15" fill="#e8a04a" fill-opacity="0.85" text-anchor="middle">scrim</text>
+
+  <!-- the one thread that matters passes through -->
+  <path d="M510 188 C 556 188, 620 158, 700 148" fill="none" stroke="#f0c36a" stroke-width="2.5"/>
+  <path d="M700 148 l-14 -6 1 12 z" fill="#f0c36a"/>
+
+  <!-- ============ right: what the model reads ============ -->
+  <text x="708" y="96" class="mono" font-size="17" fill="#f4efe6" fill-opacity="0.75">what the model reads</text>
+  <text x="1200" y="96" class="mono" font-size="14" fill="#f0c36a" fill-opacity="0.9" text-anchor="end">236 bytes</text>
+
+  <rect x="700" y="112" width="500" height="204" rx="10" fill="#16120e" stroke="#e8a04a" stroke-opacity="0.25"/>
+  <g class="mono" font-size="16">
+    <text x="728" y="152" fill="#f0c36a" font-weight="600">FAIL  checkout</text>
+    <text x="728" y="184" fill="#f4efe6" fill-opacity="0.85">AssertionError: expected 500 == 502</text>
+    <text x="728" y="216" fill="#f4efe6" fill-opacity="0.55">    at checkout.test.ts:118</text>
+  </g>
+  <g class="mono" font-size="14">
+    <text x="728" y="260" fill="#e8a04a" fill-opacity="0.8">[scrim] test_build_lint: 183412 &#8594; 236 bytes.</text>
+    <text x="728" y="286" fill="#e8a04a" fill-opacity="0.55">[scrim] full output: scrim get 9kQ2mZ7f</text>
+  </g>
+</svg>

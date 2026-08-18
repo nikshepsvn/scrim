@@ -1,21 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Scrim">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Scrim — a lamp glowing through cloth bands">
+  <defs>
+    <radialGradient id="lamp" cx="0.5" cy="0.42" r="0.66">
+      <stop offset="0" stop-color="#f0c36a"/>
+      <stop offset="0.38" stop-color="#e8a04a"/>
+      <stop offset="0.72" stop-color="#e8a04a" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#e8a04a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
   <rect width="64" height="64" rx="14" fill="#0c0b0a"/>
-  <g fill="none" stroke="#e8a04a" stroke-linecap="square">
-    <g stroke-width="1.1" opacity="0.22">
-      <path d="M8 12h48M8 16h48M8 20h48M8 24h48"/>
-    </g>
-    <g stroke-width="1.15" opacity="0.45">
-      <path d="M8 28h48M8 32h48M8 36h48"/>
-    </g>
-    <g stroke-width="1.25" opacity="0.8">
-      <path d="M8 40h48M8 44h48"/>
-    </g>
-    <g stroke-width="1.4" opacity="1">
-      <path d="M8 48h48M8 52h48"/>
-    </g>
-    <g stroke="#f4efe6" stroke-width="1" opacity="0.12">
-      <path d="M16 8v48M24 8v48M32 8v48M40 8v48M48 8v48"/>
-    </g>
+  <circle cx="32" cy="30" r="23" fill="url(#lamp)"/>
+  <!-- cloth bands: denser toward the hem, so the light opens upward -->
+  <g stroke="#0c0b0a" stroke-linecap="butt">
+    <path d="M2 14h60" stroke-width="2"/>
+    <path d="M2 21h60" stroke-width="2.6"/>
+    <path d="M2 28h60" stroke-width="3.2"/>
+    <path d="M2 35h60" stroke-width="4"/>
+    <path d="M2 42h60" stroke-width="4.8"/>
+    <path d="M2 49h60" stroke-width="5.6"/>
   </g>
   <rect x="1" y="1" width="62" height="62" rx="13" fill="none" stroke="#e8a04a" stroke-opacity="0.35"/>
 </svg>
