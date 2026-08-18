@@ -75,16 +75,34 @@ Set `"shrink": false` to log only.
 There are two real compressors, both agent-readable:
 
 1. **Structural** (on by default) — large JSON/NDJSON becomes `{_n, head, tail}`; HTML becomes stripped text.
-2. **Haiku reducer** (off) — extractive pass on fat logs/bash/MCP. Needs `ANTHROPIC_API_KEY`. Fail-open, 4s timeout, hashed cache in `~/.spend/reducer-cache/`.
+2. **Model reducer** (off) — extractive pass on fat logs/bash/MCP. Fail-open, cached.
+
+**OpenRouter** (any model):
+
+```bash
+export OPENROUTER_API_KEY=sk-or-...
+```
 
 ```json
 {
   "structural": true,
-  "reducer": "haiku"
+  "reducer": "openrouter",
+  "reducer_model": "google/gemini-2.5-flash",
+  "reducer_timeout_sec": 8
 }
 ```
 
-Leave `reducer` at `"off"` unless you want to pay Haiku on big dumps. Structural is enough for JSON APIs and pages.
+Stronger (and slower/pricier) examples:
+
+```json
+"reducer_model": "anthropic/claude-sonnet-4.5"
+"reducer_model": "google/gemini-2.5-pro"
+"reducer_model": "qwen/qwen3-32b"
+```
+
+**Anthropic direct** still works: `"reducer": "haiku"` + `ANTHROPIC_API_KEY`.
+
+Leave `reducer` at `"off"` unless you want to pay per fat dump. Structural + image-drop is free. Don't point this at Opus — you will spend more reducing than you save.
 
 ## Codex
 

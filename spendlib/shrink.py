@@ -7,7 +7,7 @@ from typing import Any
 
 from .classify import classify
 from .compress import compress_text
-from .reducer import reduce_with_haiku
+from .reducer import reduce_text
 from .textops import drain, head_tail, keep_signal_lines
 
 # kinds we refuse to rewrite (source / diffs / small structured)
@@ -195,12 +195,12 @@ def shrink_tool(tool_name: str, tool_input: Any, tool_response: Any, cfg: dict) 
             thinned = packed
             notes.append("structural")
 
-    if (cfg.get("reducer") or "off") == "haiku" and kind not in PASSTHROUGH:
+    if (cfg.get("reducer") or "off") not in {"off", "false", "0", ""} and kind not in PASSTHROUGH:
         src = thinned or text
-        reduced = reduce_with_haiku(src, cfg)
+        reduced = reduce_text(src, cfg)
         if reduced and len(reduced) < len(src):
             thinned = reduced
-            notes.append("haiku")
+            notes.append("reducer")
 
     if thinned:
         thinned = _annotate(thinned, len(text), kind)

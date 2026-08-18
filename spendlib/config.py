@@ -16,10 +16,11 @@ DEFAULTS = {
     "warn_session_usd": 40.0,
     "structural": True,
     "reducer": "off",
-    "reducer_model": "claude-haiku-4-5-20251001",
+    "reducer_model": "google/gemini-2.5-flash",
     "reducer_min_bytes": 8000,
     "reducer_max_bytes": 120000,
-    "reducer_timeout_sec": 4,
+    "reducer_timeout_sec": 8,
+    "reducer_api_key": "",
 }
 
 
