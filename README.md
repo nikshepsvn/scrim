@@ -1,58 +1,77 @@
-# Scrim
+<p align="center">
+  <img src="assets/mark.svg" width="72" height="72" alt="Scrim mark">
+</p>
 
-A **scrim** is the cloth in front of a light: signal goes through, glare does not. This plugin sits between the tool and the model the same way.
+<h1 align="center">Scrim</h1>
 
-**Cost observability and tool-output optimization for Claude Code.**
+<p align="center">
+  <em>The cloth between the tool and the model.</em>
+</p>
 
-Scrim does four things:
+<p align="center">
+  Signal goes through. Glare does not.<br>
+  Cost observability and tool-output optimization for <a href="https://code.claude.com">Claude Code</a>.
+</p>
 
-1. **See** — cache-read vs write vs output, by model, plus what tools dumped  
-2. **Prevent** — cap `ls -R`, `find`, and `rg` *before* they run  
-3. **Thin** — drop screenshots, passing tests, log spam; stash the original so you can pull it back  
-4. **Delegate** — `/scrim` and stash retrieval run on a **Haiku** subagent so Opus does not spend a turn on the report  
+<p align="center">
+  <img src="https://img.shields.io/badge/claude_code-plugin-e8a04a?style=flat-square&labelColor=0c0b0a" alt="Claude Code plugin">
+  <img src="https://img.shields.io/badge/hooks-fail--open-f4efe6?style=flat-square&labelColor=0c0b0a" alt="Fail-open">
+  <img src="https://img.shields.io/badge/license-MIT-16120e?style=flat-square&labelColor=0c0b0a" alt="MIT">
+  <img src="https://img.shields.io/github/actions/workflow/status/nikshepsvn/scrim/test.yml?style=flat-square&label=tests&labelColor=0c0b0a" alt="tests">
+</p>
 
-Swarm watch: `SubagentStart` counts open agents and warns after `max_open_subagents` (default 8). It cannot block a spawn.
+<p align="center">
+  <img src="assets/banner.svg" width="100%" alt="A weave that opens from left to right — dense noise, then light">
+</p>
 
-Hooks fail open. `Read` and `Edit` are never rewritten. It does not switch models and it does not change a Max subscription’s Stripe charge.
+---
 
-## Before / after
+In a theater, a **scrim** hangs in front of the lamp. The scene stays lit. The bulb never hits your eyes.
 
-`pytest -q` — 402 lines, one failure:
+Coding agents don't have one. They read every passing test, the full `ls -R`, and six Chrome screenshots — then you pay (or compact) for the glare.
+
+Scrim hangs in front of the tool result.
 
 ```
-PASS test_a
-PASS test_a
-… 398 more …
-FAIL test_b
-AssertionError: boom
+  npm test · 4,212 lines                         what the model reads
+┌────────────────────────────┐                 ┌──────────────────────┐
+│ PASS auth   (42)           │                 │ FAIL checkout        │
+│ PASS cart   (38)           │     scrim       │ AssertionError       │
+│ PASS orders (57)           │  ───────────►   │ expected 500 == 502  │
+│ FAIL checkout              │                 │ at checkout.test:118 │
+│ PASS shipping (22)         │                 │                      │
+│ … 4,180 more passing …     │                 │ [scrim] 4212 → 34 B  │
+└────────────────────────────┘                 └──────────────────────┘
 ```
 
-What the model gets:
+`Read` and `Edit` never go through it. Hooks **fail open**. It does not switch your model, and it does not change a Max subscription's Stripe charge.
 
-```
-FAIL test_b
-AssertionError: boom
+## Four jobs
 
-[scrim] test_build_lint: 2827 → 34 bytes.
-```
+| | | |
+|---|---|---|
+| **See** | Transcripts + hooks | Cache-read share, list-price $, MB by tool |
+| **Prevent** | `PreToolUse` | `ls -R` / `find` / `rg` capped *before* they run |
+| **Thin** | `PostToolUse` | Tests, logs, grep, listings, Chrome images, fat JSON |
+| **Delegate** | Subagents | `/scrim` and stash retrieve run on **Haiku**, not Opus |
 
-Chrome `browser_batch` with six screenshots: images dropped, text kept. On this machine that was 104 MB → 3 MB of MCP payload.
+Swarm watch counts open subagents and warns after eight. Claude Code will not let a hook cancel a spawn.
 
 ## Install
 
 ```bash
 git clone git@github.com:nikshepsvn/scrim.git
-claude --plugin-dir "$(pwd)/scrim"
+claude --plugin-dir "$(cd scrim && pwd)"
 ```
 
-Needs GitHub auth (private repo):
+Private marketplace (needs GitHub auth):
 
 ```text
 /plugin marketplace add nikshepsvn/scrim
 /plugin install scrim@scrim
 ```
 
-Restart Claude Code. Run any tool. Then `/scrim`.
+Restart Claude Code. Run a tool. Then `/scrim`.
 
 ```bash
 make test
@@ -78,30 +97,32 @@ python3 scripts/scrim.py get <id>          # omitted original
 python3 scripts/scrim.py get <id> 118-130
 ```
 
-Dollar figures are Opus/Sonnet list prices. Max/Ultra subscribers do not pay that cash.
+Those dollars are Opus/Sonnet **list prices**. Max/Ultra is a subscription — you are looking at quota shape, not a card charge.
 
-## What gets thinned
+## What gets through
 
 | Kind | Policy |
 |---|---|
-| Tests / lint | FAIL, Error, traceback + tail |
+| Tests / lint | FAIL, Error, traceback, tail |
 | Logs | Drain-lite templates + counts |
 | Grep / `rg` | Head + tail; FAIL/Error hits always kept |
 | `ls` / Glob | Head + omitted count |
-| Chrome / Playwright | Drop images, cap leftover text |
+| Chrome / Playwright | Images dropped, leftover text capped |
 | Web | 16 KB cap |
 | Other fat bash | Signal lines, else head+tail |
-| `Read` / `Edit` | Untouched |
+| `Read` / `Edit` | **Untouched** |
 
 gzip does not reduce tokens. The model has to read text.
 
-Copy [`config.example.json`](config.example.json) to `~/.scrim/config.json`. `"shrink": false` logs only. Full key list: [docs/config.md](docs/config.md).
+Omitted bytes are stashed under `~/.scrim/blobs/` for seven days. Pull a slice with `scrim get` — preferably via the **scrim-retrieve** subagent, so the parent never loads the blob.
 
-If `~/.sift` or `~/.spend` still exists, the first run renames it to `~/.scrim`.
+Copy [`config.example.json`](config.example.json) → `~/.scrim/config.json`. `"shrink": false` logs only. Every key: [docs/config.md](docs/config.md).
 
-## Optional: OpenRouter extract
+Old `~/.sift` / `~/.spend` directories are renamed on first run.
 
-Deterministic filters are the default and enough for screenshots and fat bash. For logs that need a real extract, turn on a reducer. **`inception/mercury-2`** is the one that worked in our bake-off (keep ≥4096 completion tokens).
+## Optional extract
+
+Filters are the default. For logs that still need a brain, turn on OpenRouter. **`inception/mercury-2`** is the model that extracted in our bake-off. Use ≥4096 completion tokens.
 
 ```bash
 export OPENROUTER_API_KEY=sk-or-...
@@ -116,27 +137,44 @@ export OPENROUTER_API_KEY=sk-or-...
 }
 ```
 
-The macOS Claude app often does not inherit shell env. You can set `reducer_api_key` in `~/.scrim/config.json` instead. Do not commit that file.
+The macOS Claude app often ignores shell env. You can set `reducer_api_key` in `~/.scrim/config.json`. Do not commit that file.
 
-Skip Morph (`morph/morph-v3-*`) and Inkling. Morph reprints the dump. Inkling burns the budget on hidden reasoning. Notes: [docs/eval.md](docs/eval.md). Backup: `google/gemini-2.5-flash`.
+Do not use Morph or Inkling as the reducer. Morph reprints the dump. Inkling spends the budget on hidden reasoning. Notes: [docs/eval.md](docs/eval.md). Backup: `google/gemini-2.5-flash`.
+
+## How it hangs
+
+```mermaid
+flowchart LR
+  A[Tool call] --> B[PreToolUse]
+  B -->|cap ls / rg / Grep| C[Tool runs]
+  C --> D[PostToolUse]
+  D -->|thin + stash| E[Model]
+  E --> F[Stop]
+  F --> G["~/.scrim/last.txt"]
+  G --> H["/scrim → Haiku analyst"]
+```
+
+Any hook error prints `{}` and exits 0. The agent sees the original result.
 
 ## Privacy
 
-Default: nothing extra leaves the machine. Metrics are counts and tool names.
+Default path: nothing extra leaves the machine. Metrics are counts and tool names.
 
-Reducer on: truncated tool output goes to OpenRouter (or Anthropic). Cache: `~/.scrim/reducer-cache/`.
+Reducer on: a truncated dump is sent to OpenRouter or Anthropic. Cache lives in `~/.scrim/reducer-cache/`.
 
 ## Codex
 
-Tracking works if you point Codex `PostToolUse` at `hooks/posttooluse.py`. Replacing output is first-class in Claude Code; confirm it on your Codex build before relying on it. [codex/README.md](codex/README.md).
+Tracking works if you point Codex `PostToolUse` at `hooks/posttooluse.py`. Replacing output is first-class in Claude Code; confirm it on your Codex build. [codex/README.md](codex/README.md).
 
 ## Docs
 
-- [docs/how-it-works.md](docs/how-it-works.md) — hook pipeline
-- [docs/config.md](docs/config.md) — every key
-- [docs/eval.md](docs/eval.md) — measured save rates and model bake-off
-- [SECURITY.md](SECURITY.md)
+| | |
+|---|---|
+| [How it works](docs/how-it-works.md) | Hook pipeline |
+| [Config](docs/config.md) | Every key |
+| [Eval](docs/eval.md) | Measured save rates and model bake-off |
+| [Security](SECURITY.md) | Fail-open and what leaves the machine |
 
 ## License
 
-MIT
+[MIT](LICENSE)
