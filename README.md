@@ -9,7 +9,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/claude_code-plugin-e8a04a?style=flat-square&labelColor=0c0b0a" alt="Claude Code plugin">
   <img src="https://img.shields.io/badge/codex-hooks-f4efe6?style=flat-square&labelColor=0c0b0a" alt="Codex hooks">
-  <img src="https://img.shields.io/badge/v0.7.0-16120e?style=flat-square&label=scrim&labelColor=0c0b0a" alt="v0.7.0">
+  <img src="https://img.shields.io/badge/v0.8.0-16120e?style=flat-square&label=scrim&labelColor=0c0b0a" alt="v0.8.0">
   <img src="https://img.shields.io/badge/hooks-fail--open-f4efe6?style=flat-square&labelColor=0c0b0a" alt="Fail-open">
   <img src="https://img.shields.io/badge/deps-stdlib_only-16120e?style=flat-square&labelColor=0c0b0a" alt="stdlib only">
   <img src="https://img.shields.io/badge/license-MIT-16120e?style=flat-square&labelColor=0c0b0a" alt="MIT">
@@ -44,7 +44,7 @@ git clone git@github.com:nikshepsvn/scrim.git
 claude --plugin-dir "$(cd scrim && pwd)"
 ```
 
-Or from the private marketplace (needs GitHub auth):
+Or from the marketplace:
 
 ```text
 /plugin marketplace add nikshepsvn/scrim
@@ -141,6 +141,18 @@ last 7 days  (list prices, not Stripe)
 day           claude $  codex $   turns     tool MB in→out
 2026-08-18         382        0   1,266        4.20 → 0.31
 2026-08-17         129        0     306                  -
+```
+
+### Statusline
+
+Live numbers in every turn instead of a post-hoc report — wire `scrim statusline` into Claude Code's `statusLine` slot in `~/.claude/settings.json`:
+
+```json
+"statusLine": { "type": "command", "command": "python3 /ABS/PATH/TO/scrim/scripts/scrim.py statusline" }
+```
+
+```
+Fable · ctx 42% · $1.23 · tools 4.2→0.3 MB · 3.9 thinned · compacted ×1
 ```
 
 ## Codex

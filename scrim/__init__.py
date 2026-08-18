@@ -1,6 +1,6 @@
 """A scrim between the tool and the model. Local, fail-open."""
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 from .config import load_config, load_config_report, data_dir
 from .metrics import append_metric, summarize

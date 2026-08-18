@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.8.0
+
+The public release.
+
+- `scrim statusline` — a line for Claude Code's `statusLine` slot: model, context %, real cost from the harness, plus this session's tool MB, thinned MB, and compaction count from Scrim's own metrics.
+- The session-MB warning now also fires **before** a turn (`UserPromptSubmit`, once per session), not only at Stop where it arrives too late to change anything.
+- `scrim get` logs retrievals (`kind: retrieve`); the report shows pull counts — if stashes are never pulled, the thinning provably loses nothing anyone wanted.
+- Compaction trigger recorded correctly on Claude Code (`compaction_reason`; Codex sends `trigger`).
 
 New:
 

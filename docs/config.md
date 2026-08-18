@@ -35,7 +35,7 @@ Unknown keys are ignored. Missing keys use defaults. A value of the wrong type f
 | `stash` | `true` | Keep omitted originals in `~/.scrim/blobs/` |
 | `stash_ttl_days` | `7` | Delete older blobs |
 | `stash_max_mb` | `512` | Cap stash dir |
-| `session_tool_mb_warn` | `2` | Stop-hook warning once *this session's* tool results pass this many MB |
+| `session_tool_mb_warn` | `2` | Warn once *this session's* tool results pass this many MB — at Stop, and once mid-session at prompt time where it can still change the turn. `0` disables both |
 | `max_open_subagents` | `8` | Warn (do not block) when this many are already open |
 
 "Today" everywhere means the machine's **local calendar day** — timestamps on disk are UTC and get converted before comparing.

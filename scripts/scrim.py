@@ -17,7 +17,7 @@ if str(ROOT) not in sys.path:
 
 import scrim as scrim_pkg
 from scrim.config import config_path, data_dir, load_config, load_config_report
-from scrim.metrics import daily_tools, metrics_path, prune_metrics, summarize
+from scrim.metrics import append_metric, daily_tools, metrics_path, prune_metrics, summarize
 from scrim.observe import (
     daily_codex,
     daily_usage,
@@ -67,6 +67,11 @@ def cmd_get(bid: str, lines: str | None) -> int:
     if text is None:
         print(f"scrim: no stash {bid!r}", file=sys.stderr)
         return 1
+    try:
+        # pull rate tells us whether the thinning is losing anything anyone wants
+        append_metric({"kind": "retrieve", "tool_name": bid, "bytes_in": 0, "bytes_out": len(text), "shrunk": False})
+    except Exception:
+        pass
     print(text)
     return 0
 
@@ -109,6 +114,36 @@ def cmd_kinds(today: bool) -> int:
     for kind, v in kinds.items():
         saved = max(0, v["in"] - v["out"])
         print(f"{kind:<16} {v['n']:>6} {v['in']/1e6:>8.2f} {v['out']/1e6:>8.2f} {saved/1e6:>9.2f}")
+    return 0
+
+
+def cmd_statusline() -> int:
+    """One line for the statusLine slot. Harness JSON arrives on stdin."""
+    try:
+        payload = json.loads(sys.stdin.read() or "{}")
+    except Exception:
+        payload = {}
+    sid = payload.get("session_id")
+    ctx_pct = (payload.get("context_window") or {}).get("used_percentage")
+    cost = (payload.get("cost") or {}).get("total_cost_usd")
+    model = (payload.get("model") or {}).get("display_name")
+    try:
+        tools = summarize(session_id=sid) if sid else {}
+    except Exception:
+        tools = {}
+    amber, dim, reset = "\033[38;5;179m", "\033[2m", "\033[0m"
+    parts = [f"{amber}{model or 'scrim'}{reset}"]
+    if isinstance(ctx_pct, (int, float)):
+        parts.append(f"ctx {ctx_pct:.0f}%")
+    if isinstance(cost, (int, float)) and cost > 0:
+        parts.append(f"${cost:,.2f}")
+    if tools.get("bytes_in"):
+        parts.append(f"tools {tools['bytes_in']/1e6:.1f}→{tools['bytes_out']/1e6:.1f} MB")
+    if tools.get("saved"):
+        parts.append(f"{amber}{tools['saved']/1e6:.1f} thinned{reset}")
+    if tools.get("compactions"):
+        parts.append(f"compacted ×{tools['compactions']}")
+    print(f" {dim}·{reset} ".join(parts))
     return 0
 
 
@@ -246,8 +281,8 @@ def main() -> int:
     p.add_argument(
         "cmd",
         nargs="?",
-        choices=["get", "stashes", "kinds", "days", "doctor", "prune"],
-        help="get <id> [range] | stashes | kinds | days [n] | doctor | prune [days]",
+        choices=["get", "stashes", "kinds", "days", "doctor", "prune", "statusline"],
+        help="get <id> [range] | stashes | kinds | days [n] | doctor | prune [days] | statusline",
     )
     p.add_argument("target", nargs="?", help="stash id (get) or day count (days/prune)")
     p.add_argument("lines", nargs="?", help="start-end line range (get)")
@@ -274,6 +309,8 @@ def main() -> int:
         return cmd_kinds(args.today)
     if args.cmd == "days":
         return cmd_days(args.target)
+    if args.cmd == "statusline":
+        return cmd_statusline()
     if args.cmd == "doctor":
         return cmd_doctor()
     if args.cmd == "prune":

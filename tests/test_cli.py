@@ -180,6 +180,62 @@ def test_days_runs():
     assert r.returncode == 0, r.stderr
 
 
+def test_statusline():
+    payload = json.dumps({
+        "session_id": "sl-test",
+        "model": {"display_name": "Fable"},
+        "context_window": {"used_percentage": 42.4},
+        "cost": {"total_cost_usd": 1.234},
+    })
+    r = _run(["statusline"], stdin=payload)
+    assert r.returncode == 0, r.stderr
+    assert "Fable" in r.stdout
+    assert "ctx 42%" in r.stdout
+    assert "$1.23" in r.stdout
+
+
+def test_statusline_garbage_stdin_fails_open():
+    r = _run(["statusline"], stdin="not json")
+    assert r.returncode == 0
+    assert r.stdout.strip()
+
+
+def test_promptsubmit_warns_once():
+    with tempfile.TemporaryDirectory(prefix="scrim-warn-") as td:
+        env = {**ENV, "SCRIM_DATA_DIR": td}
+        # seed 3 MB of tool bytes for this session (default warn is 2 MB)
+        rows = [json.dumps({"session_id": "s-warn", "kind": "bash",
+                            "bytes_in": 3_000_000, "bytes_out": 3_000_000,
+                            "ts": "2026-08-18T00:00:00+00:00"})]
+        (Path(td) / "metrics.jsonl").write_text("\n".join(rows) + "\n")
+        payload = json.dumps({"session_id": "s-warn", "prompt": "hi"})
+        run = lambda: subprocess.run(
+            ["sh", str(ROOT / "hooks" / "run.sh"), "promptsubmit.py"],
+            input=payload, capture_output=True, text=True, env=env, timeout=30,
+        )
+        first = json.loads(run().stdout)
+        assert "MB of tool output" in first["hookSpecificOutput"]["additionalContext"]
+        second = json.loads(run().stdout)
+        assert second == {}  # one-time note, not a nag
+
+
+def test_get_logs_retrieval():
+    with tempfile.TemporaryDirectory(prefix="scrim-ret-") as td:
+        env = {**ENV, "SCRIM_DATA_DIR": td}
+        seed = subprocess.run(
+            [sys.executable, "-c",
+             f"import sys; sys.path.insert(0, {str(ROOT)!r}); "
+             "from scrim.stash import put; print(put('x' * 600, tool_use_id='ret1'))"],
+            capture_output=True, text=True, env=env, timeout=30,
+        )
+        bid = seed.stdout.strip()
+        assert bid, seed.stderr
+        r = subprocess.run(CLI + ["get", bid], capture_output=True, text=True, env=env, timeout=30)
+        assert r.returncode == 0, r.stderr
+        rows = [json.loads(x) for x in (Path(td) / "metrics.jsonl").read_text().splitlines()]
+        assert any(x.get("kind") == "retrieve" and x.get("tool_name") == bid for x in rows)
+
+
 def test_pretooluse_caps_ls():
     payload = json.dumps({"tool_name": "Bash", "tool_input": {"command": "ls -R /"}})
     r = _hook("pretooluse.py", payload)

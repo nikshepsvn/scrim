@@ -1,6 +1,6 @@
 {
   "name": "scrim",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "A scrim between the tool and the model. Cost observability and tool-output thinning for Claude Code and Codex. Local, fail-open.",
   "author": {
     "name": "nikshepsvn"

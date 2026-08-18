@@ -43,7 +43,8 @@ def render(usage: dict, tools: dict, codex: dict | None = None) -> str:
         if kinds:
             lines.append("  kinds  " + " · ".join(kinds))
         if tools.get("stashes"):
-            lines.append(f"  stashed originals  {tools['stashes']:,}  (scrim get <id>)")
+            pulls = f"  ·  pulled {tools['retrievals']:,}" if tools.get("retrievals") else ""
+            lines.append(f"  stashed originals  {tools['stashes']:,}  (scrim get <id>){pulls}")
         if tools.get("swarms"):
             lines.append(f"  subagents spawned  {tools['swarms']:,}")
         if tools.get("compactions"):

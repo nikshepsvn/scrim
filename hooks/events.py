@@ -47,11 +47,12 @@ def main() -> int:
         if event == "PreCompact":
             # each compaction means the window overflowed — the exact thing
             # thinning exists to delay. Count it; /scrim surfaces the total.
+            # Claude Code names the field compaction_reason; Codex names it trigger.
             append_metric(
                 {
                     "session_id": sid,
                     "kind": "compact",
-                    "tool_name": data.get("trigger") or "auto",
+                    "tool_name": data.get("compaction_reason") or data.get("trigger") or "auto",
                     "bytes_in": 0,
                     "bytes_out": 0,
                     "shrunk": False,
