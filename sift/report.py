@@ -29,6 +29,8 @@ def render(usage: dict, tools: dict) -> str:
         )
         for name, v in list((tools.get("by_tool") or {}).items())[:8]:
             lines.append(f"    {name:<40} n={v['n']:<5} {v['in']/1e6:6.2f} MB")
+        if tools.get("swarms"):
+            lines.append(f"  subagents spawned  {tools['swarms']:,}")
     else:
         lines.append("  no hook metrics yet — install the plugin and run a tool")
     return "\n".join(lines) + "\n"

@@ -34,5 +34,6 @@ Unknown keys are ignored. Missing keys use defaults.
 | `stash_ttl_days` | `7` | Delete older blobs |
 | `stash_max_mb` | `512` | Cap stash dir |
 | `session_tool_mb_warn` | `2` | Stop-hook warning threshold |
+| `max_open_subagents` | `8` | Warn (do not block) when this many are already open |
 
 Env, in order: `OPENROUTER_API_KEY` or `ANTHROPIC_API_KEY`, then `SPEND_REDUCER_KEY` / `SIFT_REDUCER_KEY`, then `reducer_api_key`.

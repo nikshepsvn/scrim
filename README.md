@@ -2,11 +2,14 @@
 
 **Cost observability and tool-output optimization for Claude Code.**
 
-Sift does three things:
+Sift does four things:
 
 1. **See** — cache-read vs write vs output, by model, plus what tools dumped  
 2. **Prevent** — cap `ls -R`, `find`, and `rg` *before* they run  
 3. **Thin** — drop screenshots, passing tests, log spam; stash the original so you can pull it back  
+4. **Delegate** — `/sift` and stash retrieval run on a **Haiku** subagent so Opus does not spend a turn on the report  
+
+Swarm watch: `SubagentStart` counts open agents and warns after `max_open_subagents` (default 8). It cannot block a spawn.
 
 Hooks fail open. `Read` and `Edit` are never rewritten. It does not switch models and it does not change a Max subscription’s Stripe charge.
 

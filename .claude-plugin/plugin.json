@@ -1,6 +1,6 @@
 {
   "name": "sift",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Cost observability and tool-output optimization for Claude Code. Local, fail-open.",
   "author": {
     "name": "nikshepsvn"

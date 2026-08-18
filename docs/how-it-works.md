@@ -18,7 +18,9 @@ Stop
     warn if this session dumped ≥2 MB
 ```
 
-`/sift` reads transcripts for cache/write/output $ and hook metrics for what was thinned.
+`/sift` should spawn **sift-analyst** (Haiku). Stash pulls go through **sift-retrieve** so the parent never loads the blob.
+
+`SubagentStart` / `SubagentStop` count swarms and inject a hint past `max_open_subagents`. Claude Code does not let a hook cancel a spawn.
 
 The hook cannot change the session model. Routing Opus → Haiku is a different process.
 

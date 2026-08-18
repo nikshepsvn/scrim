@@ -29,6 +29,7 @@ DEFAULTS = {
     "stash_ttl_days": 7,
     "stash_max_mb": 512,
     "session_tool_mb_warn": 2,
+    "max_open_subagents": 8,
 }
 
 

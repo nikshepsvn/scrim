@@ -4,9 +4,9 @@ description: Cost and tool-output report. Retrieve a stashed original with sift 
 
 # /sift
 
-Do not invent numbers.
+Do not invent numbers. **Delegate to the `sift-analyst` subagent** (Haiku) instead of analyzing transcripts yourself.
 
-1. Run the CLI (plugin root is `$CLAUDE_PLUGIN_ROOT` when set):
+1. Spawn `sift-analyst`, or run the CLI (plugin root is `$CLAUDE_PLUGIN_ROOT` when set):
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sift.py" --today
@@ -14,7 +14,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sift.py" --today
 
 2. If that fails, Read `~/.sift/last.txt`.
 
-3. If the user asks for an omitted original: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sift.py" get <id> [start-end]`
+3. If they need an omitted original, spawn `sift-retrieve` with the stash id. Do not Read the blob in the parent session.
 
 4. Lifetime transcript usage: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sift.py" --backfill`
 

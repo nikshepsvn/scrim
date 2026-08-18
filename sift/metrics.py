@@ -43,10 +43,16 @@ def summarize(since_prefix: str | None = None) -> dict:
     bytes_in = 0
     bytes_out = 0
     shrunk = 0
+    swarms = 0
     by_tool = defaultdict(lambda: {"n": 0, "in": 0, "out": 0})
     for row in iter_metrics() or []:
         ts = row.get("ts") or ""
         if since_prefix and not ts.startswith(since_prefix):
+            continue
+        k = row.get("kind") or ""
+        if k in {"subagent_start", "subagent_stop"}:
+            if k == "subagent_start":
+                swarms += 1
             continue
         n += 1
         bi = int(row.get("bytes_in") or 0)
@@ -65,6 +71,7 @@ def summarize(since_prefix: str | None = None) -> dict:
         "bytes_out": bytes_out,
         "saved": max(0, bytes_in - bytes_out),
         "shrunk": shrunk,
+        "swarms": swarms,
         "by_tool": dict(
             sorted(by_tool.items(), key=lambda kv: -kv[1]["in"])[:12]
         ),
