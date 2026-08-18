@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="#install">Install</a>&ensp;·&ensp;<a href="#four-jobs">Four jobs</a>&ensp;·&ensp;<a href="#what-gets-through">What gets through</a>&ensp;·&ensp;<a href="#the-cli">CLI</a>&ensp;·&ensp;<a href="#codex">Codex</a>&ensp;·&ensp;<a href="docs/config.md">Config</a>
+  <a href="#install">Install</a>&ensp;·&ensp;<a href="#four-jobs">Four jobs</a>&ensp;·&ensp;<a href="#how-it-hangs">How it hangs</a>&ensp;·&ensp;<a href="#what-gets-through">What gets through</a>&ensp;·&ensp;<a href="#the-cli">CLI</a>&ensp;·&ensp;<a href="#codex">Codex</a>&ensp;·&ensp;<a href="docs/config.md">Config</a>
 </p>
 
 <br>
@@ -72,14 +72,23 @@ If nothing shows up: `python3 scripts/scrim.py doctor`. Tests are hermetic, stdl
 
 ## Four jobs
 
-| Job | Where | What |
-|---|---|---|
-| **See** | Transcripts + hooks | Cache-read share, list-price $, MB by tool and kind, compaction count, `days` trend |
-| **Prevent** | `PreToolUse` | `ls -R` / `find` / `rg` capped *before* they run — count **and** columns (one minified-JS hit can be a 200 KB line) |
-| **Thin** | `PostToolUse` | Tests, logs, grep, listings, Chrome images, fat JSON |
-| **Delegate** | Subagents | `/scrim` and stash retrieve run on **Haiku**, not your session model |
+<p align="center">
+  <img src="assets/jobs.svg" width="100%" alt="Four jobs. See — transcripts and hooks: cache-read share, list-price dollars, MB by tool and kind, compactions, a 7-day trend. Prevent — PreToolUse: ls -R, find, and rg capped before they run, by match count and by column width. Thin — PostToolUse: tests, logs, grep, listings, Chrome images, fat JSON; originals stashed for 7 days. Delegate — /scrim reports and stash pulls run on Haiku subagents, not your session model.">
+</p>
 
-Swarm watch counts open subagents and warns after eight. Compactions are logged too — each one is a context window that overflowed, which is the exact event thinning exists to delay. Claude Code will not let a hook cancel a spawn.
+<p align="center">
+  <sub>Swarm watch warns after <b>8</b> open subagents&ensp;·&ensp;compactions are logged — each one is a window that overflowed, the exact event thinning exists to delay&ensp;·&ensp;one minified-JS <code>rg</code> hit can be a 200&nbsp;KB line, hence the column cap</sub>
+</p>
+
+## How it hangs
+
+<p align="center">
+  <img src="assets/pipeline.svg" width="100%" alt="The hook pipeline: a tool call passes PreToolUse, which caps ls / rg / Grep; the tool runs; PostToolUse thins the result, stashes the original under ~/.scrim/blobs, and logs counts to metrics.jsonl; the model reads the thinned view. Stop writes ~/.scrim/last.txt, which /scrim reads on a Haiku analyst. Fail-open: any hook error prints {} and exits 0 — the agent sees the original result.">
+</p>
+
+<p align="center">
+  <sub>Fail-open covers even a missing hook file, an import error, or a Python&nbsp;2 <code>python</code>&ensp;·&ensp;<code>scrim.py doctor</code> checks the whole chain</sub>
+</p>
 
 ## What gets through
 
@@ -99,7 +108,15 @@ If the rewrite would not actually be smaller, the original goes through. PreTool
 
 gzip does not reduce tokens. The model has to read text.
 
-**Nothing is lost.** Omitted bytes are stashed under `~/.scrim/blobs/` for seven days. Pull a slice with `scrim get` — preferably via the **scrim-retrieve** subagent, so the parent never loads the blob.
+## Nothing is lost
+
+<p align="center">
+  <img src="assets/stash.svg" width="100%" alt="Nothing is lost: the model sees the thinned view with a retrieval footer; the original lives in ~/.scrim/blobs for seven days, never uploaded; scrim get pulls back just the slice you ask for, via the scrim-retrieve agent.">
+</p>
+
+<p align="center">
+  <sub>Pull through the <b>scrim-retrieve</b> subagent so the parent never loads the blob&ensp;·&ensp;retrieval output is itself exempt from thinning&ensp;·&ensp;<code>scrim stashes</code> lists what's live</sub>
+</p>
 
 To tune it, copy [`config.example.json`](config.example.json) → `~/.scrim/config.json`. `"shrink": false` logs only. Every key: [docs/config.md](docs/config.md). Old `~/.sift` / `~/.spend` directories are renamed on first run.
 
@@ -135,13 +152,15 @@ Codex CLI 0.146+ runs the same `hooks.json` format — verified live, not assume
 | **See** — tracking, stash, Stop report, `days` | ✅ verified live |
 | **Usage $** — parsed from `~/.codex/sessions` rollouts | ✅ its own block in `/scrim` |
 | **Prevent** — PreToolUse input caps | ⚠️ Code Mode `exec` skips PreToolUse ([#23411](https://github.com/openai/codex/issues/23411)) |
-| **Thin** — neutral output rewrite | ❌ not shipped ([#34895](https://github.com/openai/codex/issues/34895)); opt-in `codex_block_thin` uses the `decision:"block"` lever instead — verified live, 5,092 bytes → 762 in model context |
+| **Thin** — neutral output rewrite | ❌ not shipped ([#34895](https://github.com/openai/codex/issues/34895)); opt-in `codex_block_thin` uses the `decision:"block"` lever instead |
 
 ```bash
 make codex-hooks     # install, then trust once via /hooks in the Codex TUI
 ```
 
-Scrim detects Codex (`turn_id`) and never reports bytes as thinned that Codex didn't actually drop. Details: [codex/README.md](codex/README.md).
+<p align="center">
+  <sub>Verified on codex-cli 0.146.1, not assumed: <b>5,092&nbsp;B → 762&nbsp;B</b> in model context via the block lever&ensp;·&ensp;<code>hooks.json</code> byte-compatible with Claude Code's&ensp;·&ensp;Scrim detects Codex (<code>turn_id</code>) and never reports bytes as thinned that Codex didn't drop — <a href="codex/README.md">full matrix</a></sub>
+</p>
 
 ## Optional: extract with a model
 
@@ -169,21 +188,6 @@ The macOS Claude app often ignores shell env. You can set `reducer_api_key` in `
 Do not use Morph or Inkling as the reducer. Morph reprints the dump. Inkling spends the budget on hidden reasoning. Notes: [docs/eval.md](docs/eval.md). Backup: `google/gemini-2.5-flash`.
 
 </details>
-
-## How it hangs
-
-```mermaid
-flowchart LR
-  A[Tool call] --> B[PreToolUse]
-  B -->|cap ls / rg / Grep| C[Tool runs]
-  C --> D[PostToolUse]
-  D -->|thin + stash| E[Model]
-  E --> F[Stop]
-  F --> G["~/.scrim/last.txt"]
-  G --> H["/scrim → Haiku analyst"]
-```
-
-Any hook error prints `{}` and exits 0 — even a missing hook file, an import error, or a Python 2 `python`. The agent sees the original result.
 
 ## Privacy
 

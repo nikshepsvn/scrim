@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 220" role="img" aria-label="Nothing is lost: the model sees the thinned view with a retrieval footer, the original lives in ~/.scrim/blobs for seven days, and scrim get pulls back just the slice you ask for.">
+  <defs>
+    <marker id="sah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0L8 4L0 8z" fill="#e8a04a" fill-opacity="0.7"/>
+    </marker>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    </style>
+  </defs>
+
+  <rect width="1280" height="220" rx="16" fill="#0c0b0a"/>
+  <rect x="1" y="1" width="1278" height="218" rx="15" fill="none" stroke="#e8a04a" stroke-opacity="0.2"/>
+
+  <!-- ============ what the model saw ============ -->
+  <text x="48" y="50" class="mono" font-size="11.5" fill="#f4efe6" fill-opacity="0.4" letter-spacing="2">WHAT THE MODEL SAW</text>
+  <rect x="48" y="64" width="372" height="110" rx="10" fill="#16120e" stroke="#f4efe6" stroke-opacity="0.08"/>
+  <g class="mono">
+    <text x="72" y="98" font-size="13.5" fill="#f4efe6" fill-opacity="0.5">file_1.txt &#8230; file_116.txt</text>
+    <text x="72" y="124" font-size="13.5" fill="#e8a04a" fill-opacity="0.9">[scrim] &#8230; 370 paths omitted &#8230;</text>
+    <text x="72" y="150" font-size="12.5" fill="#e8a04a" fill-opacity="0.65">[scrim] full output: scrim get 3de4ff</text>
+  </g>
+
+  <path d="M428 119h44" stroke="#e8a04a" stroke-opacity="0.55" stroke-width="1.8" marker-end="url(#sah)"/>
+
+  <!-- ============ the original, kept ============ -->
+  <text x="486" y="50" class="mono" font-size="11.5" fill="#f4efe6" fill-opacity="0.4" letter-spacing="2">THE ORIGINAL, KEPT</text>
+  <rect x="486" y="64" width="330" height="110" rx="10" fill="#16120e" stroke="#e8a04a" stroke-opacity="0.25"/>
+  <g class="mono">
+    <text x="510" y="98" font-size="13.5" fill="#f4efe6" fill-opacity="0.85">~/.scrim/blobs/3de4ff.txt</text>
+    <text x="510" y="124" font-size="13.5" fill="#f4efe6" fill-opacity="0.5">5,092 bytes &#183; kept 7 days</text>
+    <text x="510" y="150" font-size="12.5" fill="#e8a04a" fill-opacity="0.65">never uploaded</text>
+  </g>
+
+  <path d="M824 119h44" stroke="#e8a04a" stroke-opacity="0.55" stroke-width="1.8" marker-end="url(#sah)"/>
+
+  <!-- ============ the slice, on demand ============ -->
+  <text x="882" y="50" class="mono" font-size="11.5" fill="#f4efe6" fill-opacity="0.4" letter-spacing="2">THE SLICE, ON DEMAND</text>
+  <rect x="882" y="64" width="350" height="110" rx="10" fill="#16120e" stroke="#f4efe6" stroke-opacity="0.08"/>
+  <g class="mono">
+    <text x="906" y="98" font-size="13.5" fill="#f4efe6" fill-opacity="0.85">$ scrim get 3de4ff 118-130</text>
+    <text x="906" y="124" font-size="13.5" fill="#f4efe6" fill-opacity="0.5">13 lines back, nothing else —</text>
+    <text x="906" y="150" font-size="13.5" fill="#f4efe6" fill-opacity="0.5">via the scrim-retrieve agent</text>
+  </g>
+</svg>

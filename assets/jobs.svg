@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 260" role="img" aria-label="Four jobs: See — transcripts and hooks; Prevent — PreToolUse; Thin — PostToolUse; Delegate — Haiku subagents">
+  <defs>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    </style>
+  </defs>
+
+  <rect width="1280" height="260" rx="16" fill="#0c0b0a"/>
+  <rect x="1" y="1" width="1278" height="258" rx="15" fill="none" stroke="#e8a04a" stroke-opacity="0.2"/>
+
+  <!-- ============ SEE ============ -->
+  <rect x="40" y="36" width="276" height="188" rx="10" fill="#16120e" stroke="#f4efe6" stroke-opacity="0.08"/>
+  <g fill="#e8a04a">
+    <rect x="262" y="76" width="7" height="12" opacity="0.4"/>
+    <rect x="273" y="68" width="7" height="20" opacity="0.65"/>
+    <rect x="284" y="58" width="7" height="30" opacity="0.9"/>
+  </g>
+  <text x="68" y="82" class="mono" font-size="16" font-weight="600" fill="#e8a04a" letter-spacing="3">SEE</text>
+  <text x="68" y="106" class="mono" font-size="12.5" fill="#f4efe6" fill-opacity="0.42">transcripts + hooks</text>
+  <g class="mono" font-size="13.5" fill="#f4efe6" fill-opacity="0.72">
+    <text x="68" y="138">cache-read share, list-</text>
+    <text x="68" y="160">price $, MB by tool and</text>
+    <text x="68" y="182">kind, compactions, and</text>
+    <text x="68" y="204">a 7-day trend</text>
+  </g>
+
+  <!-- ============ PREVENT ============ -->
+  <rect x="348" y="36" width="276" height="188" rx="10" fill="#16120e" stroke="#f4efe6" stroke-opacity="0.08"/>
+  <g stroke-linecap="round">
+    <path d="M542 73h40" stroke="#f4efe6" stroke-opacity="0.35" stroke-width="2"/>
+    <path d="M589 61v24" stroke="#e8a04a" stroke-width="3"/>
+  </g>
+  <text x="376" y="82" class="mono" font-size="16" font-weight="600" fill="#e8a04a" letter-spacing="3">PREVENT</text>
+  <text x="376" y="106" class="mono" font-size="12.5" fill="#f4efe6" fill-opacity="0.42">PreToolUse</text>
+  <g class="mono" font-size="13.5" fill="#f4efe6" fill-opacity="0.72">
+    <text x="376" y="138">ls -R / find / rg capped</text>
+    <text x="376" y="160">before they run, by</text>
+    <text x="376" y="182">match count and by</text>
+    <text x="376" y="204">column width</text>
+  </g>
+
+  <!-- ============ THIN ============ -->
+  <rect x="656" y="36" width="276" height="188" rx="10" fill="#16120e" stroke="#f4efe6" stroke-opacity="0.08"/>
+  <g stroke="#e8a04a" stroke-linecap="round">
+    <g stroke-width="2" opacity="0.5">
+      <path d="M862 58h28M862 68h28M862 88h28M862 98h28"/>
+    </g>
+    <path d="M850 78h52" stroke="#f0c36a" stroke-width="2.5"/>
+  </g>
+  <text x="684" y="82" class="mono" font-size="16" font-weight="600" fill="#e8a04a" letter-spacing="3">THIN</text>
+  <text x="684" y="106" class="mono" font-size="12.5" fill="#f4efe6" fill-opacity="0.42">PostToolUse</text>
+  <g class="mono" font-size="13.5" fill="#f4efe6" fill-opacity="0.72">
+    <text x="684" y="138">tests, logs, grep,</text>
+    <text x="684" y="160">listings, Chrome images,</text>
+    <text x="684" y="182">fat JSON — originals</text>
+    <text x="684" y="204">stashed for 7 days</text>
+  </g>
+
+  <!-- ============ DELEGATE ============ -->
+  <rect x="964" y="36" width="276" height="188" rx="10" fill="#16120e" stroke="#f4efe6" stroke-opacity="0.08"/>
+  <g>
+    <circle cx="1170" cy="76" r="10" fill="none" stroke="#f4efe6" stroke-opacity="0.3" stroke-width="2"/>
+    <path d="M1183 76h16" stroke="#e8a04a" stroke-opacity="0.6" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="1206" cy="76" r="5.5" fill="#e8a04a"/>
+  </g>
+  <text x="992" y="82" class="mono" font-size="16" font-weight="600" fill="#e8a04a" letter-spacing="3">DELEGATE</text>
+  <text x="992" y="106" class="mono" font-size="12.5" fill="#f4efe6" fill-opacity="0.42">Haiku subagents</text>
+  <g class="mono" font-size="13.5" fill="#f4efe6" fill-opacity="0.72">
+    <text x="992" y="138">/scrim reports and</text>
+    <text x="992" y="160">stash pulls run on</text>
+    <text x="992" y="182">Haiku, not your</text>
+    <text x="992" y="204">session model</text>
+  </g>
+</svg>
